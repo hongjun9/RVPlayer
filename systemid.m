@@ -113,28 +113,29 @@ thetas = [deg2rad(45), deg2rad(-135), deg2rad(-45), deg2rad(135)];
 % c = 0.13;
 % d = 0.22;
 m = 1.5;
-I_x = 0.008; %16365151e-9; %16365151e-9;      % Inertia (kg*m^2)
-I_y = 0.015; %8354114e-9;    %8354114e-9;
+% I_x = 0.008; %16365151e-9; %16365151e-9;      % Inertia (kg*m^2)
+% I_y = 0.015; %8354114e-9;    %8354114e-9;
 I_z = 0.017; %24008439e-9;  %24008439e-9;
 
 
-alpha = 9.6;
+% alpha = 9.6;
 throttle_hover = 0.51; %0.5595;%0.51; %0.7;    % (%)  (1559-1100)/900=0.51
-rpmmax = 10800;                % assumed max rpm (in min)          13024    9768      14784
+% rpmmax = 10800;                % assumed max rpm (in min)          13024    9768      14784
 % omega_max = (rpmmax/60)*2*pi;   % max motor speed (rad/s)        1099.9    1022.9
 % K_m = (omega_max^2)*alpha;   % guess based on max rpm ((rad/s)^2)
-K_m = (rpmmax^2)*alpha;   % guess based on max rpm (rpm)
+% K_m = (rpmmax^2)*alpha;   % guess based on max rpm (rpm)
 % K_T = m*g / 4/ (omega_max*throttle_hover)^2;   % guess based on rpm and max lift (N/(rad/s)^2)
 % K_T = m*g / 4 /(rpmmax*throttle_hover)^2;   % guess based on rpm and max lift (N/(rpm)^2)
 % K_T = m*g / (4*(throttle_hover*900+1100));
-K_T = m*g / (4*throttle_hover);
+K_T = m*g / (4*throttle_hover);   % = 7.2108
 % K_Q = K_T*0.034;                % guess based on K_T 0.034;
 K_Q = yaw_scale * I_z;
 
-a =  sin(thetas(1)) * arm_scale * I_x / K_T;
-b =  cos(thetas(1)) * arm_scale * I_y / K_T;
-c = -cos(thetas(4)) * arm_scale * I_y / K_T;
-d =  sin(thetas(4)) * arm_scale * I_x / K_T;
+%a=d, b=c
+a =  sin(thetas(1)) * arm_scale * I_x / K_T;    %0.7071 * 87.2665 * 0.008 / 7.2108 = 0.0685
+b =  cos(thetas(1)) * arm_scale * I_y / K_T;    %0.7071 * 87.2665 * 0.015 / 7.2108 = 0.1284
+c = -cos(thetas(4)) * arm_scale * I_y / K_T;    %0.7071 * 87.2665 * 0.015 / 7.2108 = 0.1284
+d =  sin(thetas(4)) * arm_scale * I_x / K_T;    %0.7071 * 87.2665 * 0.008 / 7.2108 = 0.0685
 
 %====================================
 % test the model implementation
