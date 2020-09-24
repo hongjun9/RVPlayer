@@ -151,10 +151,10 @@ for n=1:N-1
     x(6,n+1) = mod(x(6,n+1), 2*pi);
 %     x(10:12,n+1) = states(10:12,n+1);
 %     x(4:6,n+1) = states(4:6,n+1);
-%     if n * dt < 10
-%         x(10:12,n+1) = states(10:12,n+1);
-%         x(4:6,n+1) = states(4:6,n+1);
-%     end
+    if n * dt < 10
+        x(10:12,n+1) = states(10:12,n+1);
+        x(4:6,n+1) = states(4:6,n+1);
+    end
 %     
     
 %     %k-step ahead estiamtion (sync at every-k loop)
