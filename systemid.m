@@ -190,23 +190,6 @@ for n=1:NY
     title(title_name(n));
 end
 
-figure;
-for i=1:3
-    subplot(3,1,i);
-    plot(t, dx(i+9, :));
-end
-
-figure;
-for i=1:3
-    subplot(3,1,i);
-    plot(t, dx(i+6, :));
-end
-figure;
-for i=1:4
-    subplot(4,1,i);
-    plot(t, u(i, :));
-end
-
 % figure;plot(t, x(13,:))
 % hold on; plot(t, x(14,:))
 % hold on; plot(t, x(15,:))
