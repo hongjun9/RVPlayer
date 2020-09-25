@@ -13,7 +13,8 @@ raw_states = train_data(:,2:13);            % array of state vector: 12 states
 % converting: motor_input = (pwm - 1100)/900 
 % motor signal [0..1] --> motor speed (PWM servo) [0...2000]
 raw_motors = (((train_data(:,14:17)*1000)+1000)-1100)/900;   %(((0.5595*1000)+1000)-1100)/900=0.51
-
+raw_motors(raw_motors<0) = 0;
+raw_motors(raw_motors>1) = 1;
 raw_N = size(train_data,1);                 % size of samples
 
 %%%Preprocessing ================================
@@ -140,21 +141,34 @@ d =  sin(thetas(4)) * arm_scale * I_x / K_T;
 %====================================
 % test the model implementation
 t = timestamps;
-x = zeros(NX,N);    x(1:12,1) = states(:,1);
+x = zeros(NX,N);   x(6,1) = states(6,1); %x(1:12,1) = states(:,1);
 dx = zeros(NX,N);
 y = zeros(NY,N);
 u = motors;
+global frame_height;
+frame_height = 0.1;
 for n=1:N-1
     dt = t(n+1) - t(n);
     [dx(:,n),y(:,n)] = quadrotor_m(t(n), x(:,n), u(:,n), a,b,c,d, m, I_x, I_y, I_z, K_T, K_Q);
     x(:,n+1) = x(:,n) + dx(:,n) * dt; 
     x(6,n+1) = mod(x(6,n+1), 2*pi);
+    
+    if on_ground(x(3, n+1), frame_height)
+        x(3, n+1) = frame_height; % z ;
+        x(4:5,n+1) = 0; % roll = pitch = 0;
+        x(7:8, n+1) = 0; % vx = vy = 0;
+        x(10:12, n+1) = 0; %pqr = 0;
+        if x(9, n+1) < 0
+            x(9, n+1) = 0; %vz = 0;
+        end
+    end
+
 %     x(10:12,n+1) = states(10:12,n+1);
 %     x(4:6,n+1) = states(4:6,n+1);
-%     if n * dt < 10
-%         x(10:12,n+1) = states(10:12,n+1);
-%         x(4:6,n+1) = states(4:6,n+1);
-%     end
+    if n * dt < 10
+        x(10:12,n+1) = states(10:12,n+1);
+        x(4:6,n+1) = states(4:6,n+1);
+    end
 %     
     
 %     %k-step ahead estiamtion (sync at every-k loop)
@@ -175,6 +189,24 @@ for n=1:NY
     legend('Resampled', 'Model');
     title(title_name(n));
 end
+
+figure;
+for i=1:3
+    subplot(3,1,i);
+    plot(t, dx(i+9, :));
+end
+
+figure;
+for i=1:3
+    subplot(3,1,i);
+    plot(t, dx(i+6, :));
+end
+figure;
+for i=1:4
+    subplot(4,1,i);
+    plot(t, u(i, :));
+end
+
 % figure;plot(t, x(13,:))
 % hold on; plot(t, x(14,:))
 % hold on; plot(t, x(15,:))
