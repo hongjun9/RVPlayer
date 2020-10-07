@@ -1,3 +1,6 @@
+clear;
+close all;
+
 currentFolder = pwd;
 model_file = strcat(currentFolder, '/model_sitl.mat');
 load(model_file); % read model
@@ -19,11 +22,15 @@ K_Q = model.Parameters(10).Value;
 %% Read test data
 filename = 'Test3/00000153.csv';
 test_data = csvread(filename, 2, 0);  
+test_data(:, 1) = test_data(:, 1)-test_data(1, 1); % reset start time
 %trim data (remove unnecessary parts with starting point (s) and end point (s)
     sp = 1; % starting point (s)
     ep = 270; % end point (s)
     isp = find(test_data(:,1) * 1e-6 > sp, 1);
     iep = find(test_data(:,1) * 1e-6 > ep, 1);
+    if isempty(iep)
+        iep = size(test_data,1);
+    end
     test_data = test_data(isp:iep, :);
 
 NX = 12;    
@@ -65,19 +72,28 @@ u = motors;
 dx = zeros(NX,N);
 th = zeros(1,NY);   %threshold for each state
 
+global frame_height;
+frame_height = 0.1;
 for n=1:N-1
     dt = t(n+1) - t(n);
     [dx(:,n),y(:,n)] = quadrotor_m(t(n), x(:,n), u(:,n), a,b,c,d, m, I_x, I_y, I_z, K_T, K_Q);
     x(:,n+1) = x(:,n) + dx(:,n) * dt; 
+    x(6,n+1) = mod(x(6,n+1), 2*pi); % wrap yaw to [0,2pi)
     
-    x(6,n+1) = mod(x(6,n+1), 2*pi);
-%     x(10:12,n+1) = states(10:12,n+1);
-%     x(4:6,n+1) = states(4:6,n+1);
+    %========= on ground check ==========
+    if on_ground(x(3, n+1), frame_height)
+        x(3, n+1) = frame_height; % z ;
+        x(4:5,n+1) = 0; % roll = pitch = 0;
+        x(7:8, n+1) = 0; % vx = vy = 0;
+        x(10:12, n+1) = 0; %pqr = 0;
+        if x(9, n+1) < 0
+            x(9, n+1) = 0; %vz = 0;
+        end
+    end
     if n * dt < 10
         x(10:12,n+1) = states(10:12,n+1);
         x(4:6,n+1) = states(4:6,n+1);
     end
-%     
     
     %k-step ahead estiamtion (sync at every-k loop)
     k = 400;
@@ -127,7 +143,8 @@ for n=1:NY
     plot(t, y(n,:), 'b--');                  %model prediction
     hold on;
     yyaxis right
-    area(t, abs(states(n,:)-y(n,:)), 'FaceAlpha', 0.8, 'EdgeColor', 'none');    % deviation               
+    area(t, abs(states(n,:)-y(n,:)), 'FaceAlpha', 0.8, 'EdgeColor', 'none');    % deviation
+    ylim([0,0.1]);
     legend('Data', 'Log', 'Prediction', 'Error');
     
     title(title_name(n));
