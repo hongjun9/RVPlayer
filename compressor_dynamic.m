@@ -171,7 +171,7 @@ for n=1:NY
     area(t, abs(states(n,:)-y(n,:)), 'FaceAlpha', 0.8, 'EdgeColor', 'none');    % deviation
     plot(t, th(n)*ones(1, length(t)), 'g');
     ylim([0,0.2]);
-    legend('Data', 'Log', 'Prediction', 'Error', 'Error_max_thres');
+    legend('Data', 'Log', 'Prediction', 'Error', 'Error max thres');
     title(title_name(n));
 end
 
