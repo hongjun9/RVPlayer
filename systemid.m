@@ -8,6 +8,16 @@ train_data = csvread(filename, 2, 0);
 NX = 12;    
 NY = 12;
 NU = 4;
+
+%reset start time
+train_data(:,1) = train_data(:,1) - train_data(1,1);
+%trim data (remove unnecessary parts with starting point (s) and end point (s)
+    sp = 10; % starting skip (s)
+    ep = 20; % end skip (s)
+    isp = find(train_data(:,1) * 1e-6 > sp, 1);
+    iep = find(train_data(:,1) > train_data(end,1) - ep * 1e6, 1);
+    train_data = train_data(isp:iep, :);
+    
 raw_timestamps = train_data(:,1) * 1e-6;    %(s)    time vector
 raw_states = train_data(:,2:13);            % array of state vector: 12 states
 % converting: motor_input = (pwm - 1100)/900 
@@ -53,7 +63,7 @@ raw_states(:,12) = -raw_states(:,12);
 
 
 %%resample (for uniform sampling time)
-desiredFs = 10; %(default 400Hz)
+desiredFs = 400; %(default 400Hz)
 Ts = 1/desiredFs;
 [res_states, res_timestamps] = resample(raw_states,raw_timestamps,desiredFs);
 [res_motors, res_timestamps] = resample(raw_motors,raw_timestamps,desiredFs);
@@ -110,10 +120,11 @@ d =  sin(thetas(4)) * arm_scale * I_x / K_T;
 %====================================
 % test the model implementation
 t = timestamps;
-x = zeros(NX,N);   x(6,1) = states(6,1); %x(1:12,1) = states(:,1);
+x = zeros(NX,N);    x(1:12,1) = states(:,1);
 dx = zeros(NX,N);
 y = zeros(NY,N);
 u = motors;
+err = zeros(NX, N);
 global frame_height;
 frame_height = 0.1;
 for n=1:N-1
@@ -132,27 +143,40 @@ for n=1:N-1
         end
     end
 
-    if n * dt < 10
-        x(10:12,n+1) = states(10:12,n+1);
-        x(4:6,n+1) = states(4:6,n+1);
+    % sychronize for the first 10 seconds
+%     if n * dt < 10
+%         x(10:12,n+1) = states(10:12,n+1);
+%         x(4:6,n+1) = states(4:6,n+1);
+%     end
+    
+    %k-step ahead estiamtion (sync at every-k loop)
+    k = desiredFs;
+    if mod(n, k) == 0
+        x(:,n+1) = states(:,n+1);
     end
     
-%     %k-step ahead estiamtion (sync at every-k loop)
-%     k = 10;
-%     if mod(n, k) == 0
-%         x(:,n+1) = states(:,n+1);
-%     end
+    err(:, n) = abs(y(:, n) - states(:, n));
 end
 
+err_mean = mean(err, 2);
+err_max = max(err, [], 2);
+err_quants = quantile(err', [0.25, 0.75])';
+err_thresh = err_quants(:, 2) + 1.5 * (err_quants(:, 2)-err_quants(:, 1));
 figure;
 for n=1:NY
     if NY > 1
         subplot(NY/3, 3, n);
     end
+    yyaxis left
     plot(timestamps, states(n,:),'r.-');
     hold on;
     plot(t, y(n,:), 'b-');  
-    legend('Resampled', 'Model');
+    yyaxis right
+    area(t, err(n, :), 'FaceAlpha', 0.8, 'EdgeColor', 'none');
+    plot(t, err_mean(n, 1)*ones(1, length(t)), 'g');
+    plot(t, err_max(n, 1)*ones(1, length(t)), 'r');
+    plot(t, err_thresh(n, 1)*ones(1, length(t)), 'b');
+    legend('Resampled', 'Model', 'Error', 'Mean\_err', 'Max\_err', 'Thresh\_err');
     title(title_name(n));
 end
 
@@ -160,7 +184,7 @@ end
 % hold on; plot(t, x(14,:))
 % hold on; plot(t, x(15,:))
 % hold on; plot(t, x(16,:))
-% return
+return
 
 %====================================
 %% Nonlinear grey-box model - idnlgrey
