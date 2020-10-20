@@ -7,9 +7,9 @@ if last_log_time == time_now
     return;
 elseif last_log_time < time_now
     desired_freq = error/err_th * max_freq;
-%     log_freq = 1/(time_now-last_log_time);
-    hist_size = size(log_hist,2);
-    log_freq = sum(~isnan(log_hist),2)/hist_size * max_freq;
+    log_freq = 1/(time_now-last_log_time);
+%     hist_size = size(log_hist,2);
+%     log_freq = sum(~isnan(log_hist),2)/hist_size * max_freq;
     log_cond = desired_freq > log_freq;
     
     if log_cond
