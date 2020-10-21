@@ -1,6 +1,6 @@
 clear;
 close all;
-filename = 'Test3/00000153.csv';
+filename = 'Test3/00000190.csv';
 train_data = csvread(filename, 2, 0);  
 % states [x y z roll pitch yaw vx vy vz p q r]
 % output = states

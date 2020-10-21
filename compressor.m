@@ -20,7 +20,7 @@ K_T = model.Parameters(9).Value;
 K_Q = model.Parameters(10).Value;
 
 %% Read test data
-filename = 'Test3/00000153.csv';
+filename = 'Test3/00000190.csv';
 test_data = csvread(filename, 2, 0);  
 test_data(:, 1) = test_data(:, 1)-test_data(1, 1); % reset start time
 %trim data (remove unnecessary parts with starting point (s) and end point (s)
