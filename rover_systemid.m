@@ -137,12 +137,19 @@ motors = res_motors';
 % Cx = 8500
 % Cy = 405.1
 % CA = 170.6
+% m = 1700
+% a = 0.5
+% b = 0.5
+% Cx = 17000
+% Cy = 2500
+% CA = 170.6
 m = 1700
-a = 1.5
-b = 1.5
+a = 0.5
+b = 0.7
 Cx = 17000
-Cy = 2500
+Cy = 17000
 CA = 170.6
+
 p = [m; a; b; Cx; Cy; CA];
 
 %====================================
@@ -163,7 +170,7 @@ for n=1:N-1
     x(6,n+1) = wrapToPi(x(6,n+1));
 %     x(6,n+1) = mod(x(6,n+1), 2*pi);
 %       x(1,n+1) = states(1,n+1);
-      x(3,n+1) = states(3,n+1);
+%       x(3,n+1) = states(3,n+1);
 %     x(5,n+1) = states(5,n+1);
 %     x(6,n+1) = states(6,n+1);
 %     %========= on ground check ==========
@@ -237,8 +244,8 @@ nlgr_m    = idnlgrey(Filename, Order, Parameters, InitialStates);   %Nonlinear g
 %% Parameter setting
 % 
 nlgr_m.Parameters(1).Fixed = true;      
-nlgr_m.Parameters(2).Fixed = true;      
-nlgr_m.Parameters(3).Fixed = true;
+% nlgr_m.Parameters(2).Fixed = true;      
+% nlgr_m.Parameters(3).Fixed = true;
 % nlgr_m.Parameters(4).Fixed = true;
 % nlgr_m.Parameters(5).Fixed = true;      
 % nlgr_m.Parameters(6).Fixed = true;      
