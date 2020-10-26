@@ -21,7 +21,8 @@ K_Q = model.Parameters(10).Value;
 
 %%%%%
 % important paraemters for compression
-sync_k = 400*5;     % 5 (sec)
+max_freq = 400;
+sync_k = max_freq*5;     % 5 (sec)
 load('error_thresh.mat');
 err_thresh(2) = 4           %TODO: set the treshold for each state
 %%%%%
@@ -29,7 +30,7 @@ err_thresh(2) = 4           %TODO: set the treshold for each state
 
 
 %% Read test data
-filename = 'Test3/00000190.csv';
+filename = 'Test3/00000153.csv';
 test_data = csvread(filename, 2, 0);  
 test_data(:, 1) = test_data(:, 1)-test_data(1, 1); % reset start time
 %trim data (remove unnecessary parts with starting point (s) and end point (s)
@@ -126,7 +127,7 @@ check_w = 200;
 % =============== online logging
 for n=1:N
     %sychronized points are always logged.
-    if mod(n, sync_k) == 0 && n > 1
+    if mod(n, sync_k) == 1 && n > 1
         last_log_time(:, 1) = t(n);
     end
     for k=1:NY
@@ -134,11 +135,11 @@ for n=1:N
         if err(k,n) > th(k)
             yc(k,n) = states(k,n);  % online logging (compression)
 %             yo(k,n) = nan;
-            desired_log_freq(k,n) = 400;
+            desired_log_freq(k,n) = max_freq;
             last_log_time(k) = t(n);
         else
             log_hist = yc(k, max(1, n-check_w): max(1, n-1));
-            [to_log, desired_log_freq(k,n)] = is_log(err(k,n), th(k), 400, last_log_time(k), t(n), log_hist);
+            [to_log, desired_log_freq(k,n)] = is_log(err(k,n), th(k), max_freq, last_log_time(k), t(n), log_hist);
 %             to_log = 0;
             if to_log
                 yc(k,n) = states(k,n);  % online logging (compression)
@@ -191,7 +192,7 @@ for i = 1:N
     win_size = size(window_yc,2);
     window_log_count = sum(~isnan(window_yc), 2);
     window_log_count(window_log_count == 0) = 1;
-    actual_log_freq(:, i) = window_log_count/win_size*400;
+    actual_log_freq(:, i) = window_log_count/win_size*max_freq;
 end
 
 
@@ -215,7 +216,7 @@ for n=1:NY
     area(t, abs(states(n,:)-y(n,:)), 'FaceAlpha', 0.8, 'EdgeColor', 'none');    % deviation
     plot(t, th(n)*ones(1, length(t)), 'g');
     ylim([0,10]);
-    legend('State', 'Log', 'Prediction', 'Error', 'Error max thres');
+    legend('State', 'Log', 'Prediction','Model prediction',  'Error', 'Error max thres');
 end
   
 
