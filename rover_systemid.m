@@ -2,8 +2,12 @@ clear;
 close all;
 filename = 'Test6/00000012.csv';
 train_data = csvread(filename, 2, 0);  
-% states [x y yaw vx vy r]     : vx: longitudinal velcoity, vy: lateral velocity
-% output = [x y yaw vx vy r] + ay
+% states(x) [x y yaw vx vy r] 
+% vx: longitudinal velocity (body frame), vy: lateral velocity (body frame)
+
+% output(y) = [x y yaw vx vy r]  (ground truth is the same as output)
+% vx: North velocity (world frame) vy: East velocity (world frame)
+
 % input [steering, wheel_rotation]
 NX = 6;    
 NY = 6;
@@ -74,7 +78,7 @@ raw_states(:,3) = raw_states(:,6);
 raw_states(:,4) = raw_states(:,7);
 raw_states(:,5) = raw_states(:,8);
 raw_states(:,6) = raw_states(:,12);
-raw_states(:,7:12) = []
+raw_states(:,7:12) = [];
 % raw_states(:,1) = raw_states(:,7);
 % raw_states(:,2) = raw_states(:,8);
 % raw_states(:,3) = raw_states(:,12);
@@ -88,7 +92,7 @@ raw_states(:,3) = wrapToPi(raw_states(:,3));
 % throttle (motor3):  
 raw_motors(:,1) = (raw_motors(:,1)-0.5)*pi;   
 raw_motors(:,2) = raw_motors(:,3)-0.5;
-raw_motors(:,3:4) = []
+raw_motors(:,3:4) = [];
 
 
 %%resample (for uniform sampling time)
@@ -167,7 +171,7 @@ for n=1:N-1
     [dx(:,n),y(:,n)] = rover_m(t(n), x(:,n), u(:,n), m,a,b,Cx,Cy,CA);
     x(:,n+1) = x(:,n) + dx(:,n) * dt; 
     x(3,n+1) = wrapToPi(x(3,n+1)); % to [-pi pi]
-    x(6,n+1) = wrapToPi(x(6,n+1));
+%     x(6,n+1) = wrapToPi(x(6,n+1));
 %     x(6,n+1) = mod(x(6,n+1), 2*pi);
 %       x(1,n+1) = states(1,n+1);
 %       x(3,n+1) = states(3,n+1);
@@ -228,7 +232,7 @@ end
 %     legend('State', 'Model');
 
 
-% return
+return
 
 %====================================
 %% Nonlinear grey-box model - idnlgrey

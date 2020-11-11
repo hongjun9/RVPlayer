@@ -9,6 +9,14 @@ function [dx, y] = rover_m(t, x, i, m, a, b, Cx, Cy, CA, varargin)
     u(4) = 0;
     u(5) = i(1);
     
+    % NED frame
+    %x(1): Postion X
+    %x(2): Position Y
+    %x(3): Yaw [-pi, pi]
+    %x(4): Longitudinal vehicle velocity. (body frame)
+    %x(5): Lateral velocity. (body frame)
+    %x(6): Yaw rate. 
+    
     dx = rover_odefun(x, u, m, a, b, Cx, Cy, CA);      
     
 %     m = p(1);
@@ -21,12 +29,13 @@ function [dx, y] = rover_m(t, x, i, m, a, b, Cx, Cy, CA, varargin)
 %     y(1) = x(1);
 %     y(2) = x(2);
 %     y(3) = x(3);    
-
+    
+    %(NED world frame)
     %y(1): Postion X
     %y(2): Position Y
     %y(3): Yaw
-    %y(4): Longitudinal vehicle velocity. 
-    %y(5): Lateral velocity.
+    %y(4): North velocity. 
+    %y(5): East velocity.
     %y(6): Yaw rate. 
     %y(7): Lateral vehicle acceleration. 
     y(1) = x(1);
