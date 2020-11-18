@@ -197,7 +197,7 @@ end
 %     legend('State', 'Model');
 
 
-return
+% return
 
 %====================================
 %% Nonlinear grey-box model - idnlgrey
@@ -219,14 +219,14 @@ nlgr_m.Parameters(1).Fixed = true;
 % nlgr_m.Parameters(5).Fixed = true;      
 % nlgr_m.Parameters(6).Fixed = true;      
 % %-----------------------------------------------------------
-nlgr_m.Parameters(1).Minimum = 500;
+nlgr_m.Parameters(1).Minimum = 0.5;
 % nlgr_m.Parameters(2).Minimum = 0.10;      
 % nlgr_m.Parameters(3).Minimum = 0.10;      
 nlgr_m.Parameters(4).Minimum = 0;
 nlgr_m.Parameters(5).Minimum = 0;
 nlgr_m.Parameters(6).Minimum = 0;
 
-nlgr_m.Parameters(1).Maximum = 2000;
+nlgr_m.Parameters(1).Maximum = 2;
 % nlgr_m.Parameters(2).Maximum = 0.30; %0.16;
 % nlgr_m.Parameters(3).Maximum = 0.30; %0.16;
 % nlgr_m.Parameters(4).Maximum = 0.30; %0.20;

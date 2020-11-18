@@ -7,12 +7,12 @@ load(model_file); % read model
 
 %nonlinear greybox model
 present(model);
-m = model.Parameters(1).Value/1000;
+m = model.Parameters(1).Value;
 a = model.Parameters(2).Value;
 b = model.Parameters(3).Value;
-Cx = model.Parameters(4).Value/1000;
-Cy = model.Parameters(5).Value/1000;
-CA = model.Parameters(6).Value/1000; 
+Cx = model.Parameters(4).Value;
+Cy = model.Parameters(5).Value;
+CA = model.Parameters(6).Value; 
 
 %%%%%
 % important paraemters for compression
