@@ -8,8 +8,9 @@ function dx = rover_odefun(x, u, m, a, b, Cx, Cy, CA)
 %     CA = p(6);
     
 %     %[x y yaw vx vy r]
-    dx(1) = x(4)*cos(x(3));
-    dx(2) = x(4)*sin(x(3));
+    dx = zeros(6,1);
+    dx(1) = x(4)*cos(x(3)) - x(5)*sin(x(3));
+    dx(2) =  x(4)*sin(x(3)) + x(5)*cos(x(3));
     dx(3) = x(6);
     dx(4) = (x(5)*x(6) + 1/m*( Cx*(u(1)+u(2))*cos(u(5)) ...
                              -2*Cy*(u(5)-(x(5)+a*x(6))/x(4))*sin(u(5)) ...

@@ -25,26 +25,31 @@ max_freq = 400;
 sync_k = 1; %max_freq*10;     % 5 (sec)
 is_lowpass = 1;
 lowpass_w = 10;
+adaptive_order = 1;
 if is_lowpass
     load disturb_L_norm_filtered.mat
 else
     load disturb_L_norm.mat
 end
+
+reference_motor = 0.3; % 1300 pwm
 %%%%%
 
 
 
 %% Read test data
-filename = 'Test7/00000247.csv';
+filename = 'Test3/00000284.csv';
 test_data = csvread(filename, 2, 0);
-refer_idx = find(test_data(:, 14) >= 0.01, 1);
+refer_idx = find(test_data(:, 14) >= reference_motor, 1);
 reference_time = test_data(refer_idx, 1); % test_data(1, 1)
 test_data(:, 1) = test_data(:, 1)-reference_time; % reset start time
 %trim data (remove unnecessary parts with starting point (s) and end point (s)
-    sp = 2; % starting skip (s)
-    ep = 7; % end skip (s)
-    isp = find(test_data(:,1) * 1e-6 > sp, 1);
-    iep = find(test_data(:,1) > test_data(end,1) - ep * 1e6, 1);
+%     sp = 2; % starting skip (s)
+%     isp = find(test_data(:,1) * 1e-6 > sp, 1);
+%     ep = 10; % end skip (s)
+%     iep = find(test_data(:,1) > test_data(end,1) - ep * 1e6, 1);
+    isp = refer_idx + 1* max_freq;
+    iep = find(test_data(:, 14) >= reference_motor,1,'last') - 2 * max_freq;
     test_data = test_data(isp:iep, :);
 
 NX = 12;    
@@ -113,6 +118,7 @@ for n=1:N-1
     y_accel(:, n) = dx(7:12, n); % record y_accel.
     disturb_accel = accel_states(:, n) - y_accel(:, n);
     origin_disturb(:, n+1) = [time_us(n+1); disturb_accel];
+    %low_pass filtered disturbance
     avg_accel = mean(origin_disturb(2:7, max(1, n+2-lowpass_w):n+1), 2);
     lowpass_disturb(:, n+1) = [time_us(n+1); avg_accel];
     if is_lowpass
@@ -120,7 +126,9 @@ for n=1:N-1
     else
         log_reference =  disturb_accel;
     end
-    is_log = islog_disturb(log_reference,L_norm, 3, max_freq, last_log_time, t(n+1));
+    lin_acc = norm(log_reference(1:3));
+    rot_acc = norm(log_reference(4:6));
+    is_log = islog_disturb(lin_acc, rot_acc, L_norm, adaptive_order, max_freq, last_log_time, t(n+1));
     accel_log_record(:, n+1) = is_log';
     for i = 1:2
         if is_log(i)
@@ -245,5 +253,14 @@ T_disturb_rot.Properties.VariableNames(1:4) = {'Time_us','angl_accel_x', 'angl_a
 writetable(T_disturb_lin,[filename(1: end-4) '_disturb_lin.csv']);
 writetable(T_disturb_rot,[filename(1: end-4) '_disturb_rot.csv']);
 
-
+%% Statistical calculation
+kbps2gbpd = 0.0864;
+main_data_rate = 117 * max_freq / 1000; %kb/s
+other_data_rate = 14.583; %kb/s
+all_data_rate = main_data_rate + other_data_rate
+logged_data_size =4*(sum(sum(accel_log_record)) * 3 + size(sync_data, 1) * (2 + 12)); %Bytes
+total_time = N / max_freq; %s
+processed_data_rate = logged_data_size / total_time  / 1000 %kb/s
+final_data_rate = processed_data_rate + other_data_rate
+compression_rate = final_data_rate / all_data_rate
 

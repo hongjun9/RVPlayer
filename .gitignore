@@ -1,6 +1,7 @@
 *.asv
 *.prj
 *.mexw64
+codegen/
 codegen/lib/quadrotor_m/buildInfo.mat
 codegen/lib/quadrotor_m/codedescriptor.dmr
 codegen/lib/quadrotor_m/codeInfo.mat

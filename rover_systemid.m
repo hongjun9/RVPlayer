@@ -9,6 +9,9 @@ train_data = csvread(filename, 2, 0);
 % vx: North velocity (world frame) vy: East velocity (world frame)
 
 % input [steering, wheel_rotation]
+
+% compared with drone code, rover's code is in NED frame and the yaw value
+% range is [-pi, pi]
 NX = 6;    
 NY = 6;
 NU = 2;
@@ -34,41 +37,6 @@ raw_motors = train_data(:,14:17);
 raw_N = size(train_data,1);                 % size of samples
 
 %%%Preprocessing ================================
-% to North-East-Up
-% raw_states(:,2) = -raw_states(:,2);
-% raw_states(:,8) = -raw_states(:,8);
-
-%========= to NWU ==============
-% raw_states(:,2) = -raw_states(:,2);
-% raw_states(:,3) = -raw_states(:,3);
-% raw_states(:,5) = -raw_states(:,5);
-% raw_states(:,6) = -raw_states(:,6);
-% raw_states(:,8) = -raw_states(:,8);
-% raw_states(:,9) = -raw_states(:,9);
-% raw_states(:,11) = -raw_states(:,11);
-% raw_states(:,12) = -raw_states(:,12);
-
-% %========== to ENU ==============
-% % x <-> y, vx <-> vy
-% temp = raw_states(:,1); 
-% raw_states(:,1) = raw_states(:,2);
-% raw_states(:,2) = temp;
-% temp = raw_states(:,7); 
-% raw_states(:,7) = raw_states(:,8);
-% raw_states(:,8) = temp;
-% 
-% % z <-> -z, vz <-> -vz
-% raw_states(:,3) = -raw_states(:,3);
-% raw_states(:,9) = -raw_states(:,9);
-% 
-% % pitch <-> -pitch yaw = (-yaw + pi/2)
-% raw_states(:,5) = -raw_states(:,5);
-% raw_states(:,6) = mod(-raw_states(:,6)+pi/2, 2*pi);
-% 
-% % q <-> -q r <-> -r
-% raw_states(:,11) = -raw_states(:,11);
-% raw_states(:,12) = -raw_states(:,12);
-% %================================
 
 
 % extract 6 states  [x y yaw vx vy r]
@@ -84,8 +52,6 @@ raw_states(:,7:12) = [];
 % raw_states(:,3) = raw_states(:,12);
 % raw_states(:,4:12) = []
 
-raw_states(:,3) = wrapToPi(raw_states(:,3));
-
 % convert input signals
 % steering (motor1) : 0-0.5 is left turn, 0.5-1 is right turn. => pi
 % [-0.5...0.5] *
@@ -96,15 +62,16 @@ raw_motors(:,3:4) = [];
 
 
 %%resample (for uniform sampling time)
-desiredFs = 400; %(default 400Hz)
+desiredFs = 400; %(default 50Hz)
 Ts = 1/desiredFs;
 [res_states, res_timestamps] = resample(raw_states,raw_timestamps,desiredFs);
 [res_motors, res_timestamps] = resample(raw_motors,raw_timestamps,desiredFs);
 N = size(res_timestamps,1);
 
 %%states start from zero
-res_states = res_states - res_states(1,:);
+% res_states = res_states - res_states(1,:);
 res_states(1,4) = 0.1;
+res_states(:, 3) = wrapToPi(res_states(:, 3));
 
 %plot (original and sampeled)
 % title_name = ["x(North)", "y(West)", "z(up)", "roll", "pitch", "yaw", "vx", "vy", "vz", "p", "q", "r"]; 
@@ -147,59 +114,57 @@ motors = res_motors';
 % Cx = 17000
 % Cy = 2500
 % CA = 170.6
-m = 1700
+m = 1.7
 a = 0.5
 b = 0.7
-Cx = 17000
-Cy = 17000
-CA = 170.6
+Cx = 17
+Cy = 17
+CA = 0.1706
 
 p = [m; a; b; Cx; Cy; CA];
 
 %====================================
 % test the model implementation
 t = timestamps;
-x = zeros(NX,N);    x(1:NX,1) = states(:,1);
+x = zeros(NX,N);   % x(1:NX,1) = states(:,1);
+
+%set initial value
+x([1:3, 6], 1) = states([1:3, 6], 1);
+ef2bf_m = [cos(x(3, 1)), sin(x(3, 1));
+        -sin(x(3, 1)), cos(x(3, 1))];
+x(4:5, 1) = ef2bf_m * states(4:5, 1);
+          
+
 dx = zeros(NX,N);
 y = zeros(NY,N);
 u = motors;
 err = zeros(NX, N);
-global frame_height;
-frame_height = 0.1;
+
 for n=1:N-1
     dt = t(n+1) - t(n);
     [dx(:,n),y(:,n)] = rover_m(t(n), x(:,n), u(:,n), m,a,b,Cx,Cy,CA);
     x(:,n+1) = x(:,n) + dx(:,n) * dt; 
-    x(3,n+1) = wrapToPi(x(3,n+1)); % to [-pi pi]
-%     x(6,n+1) = wrapToPi(x(6,n+1));
-%     x(6,n+1) = mod(x(6,n+1), 2*pi);
-%       x(1,n+1) = states(1,n+1);
-%       x(3,n+1) = states(3,n+1);
-%     x(5,n+1) = states(5,n+1);
-%     x(6,n+1) = states(6,n+1);
-%     %========= on ground check ==========
-%     if on_ground(x(3, n+1), frame_height)
-%         x(3, n+1) = frame_height; % z ;
-%         x(4:5,n+1) = 0; % roll = pitch = 0;
-%         x(7:8, n+1) = 0; % vx = vy = 0;
-%         x(10:12, n+1) = 0; %pqr = 0;
-%         if x(9, n+1) < 0
-%             x(9, n+1) = 0; %vz = 0;
-%         end
-%     end
-
-    % sychronize for the first 10 seconds
-%     if n * dt < 10
-%         x(10:12,n+1) = states(10:12,n+1);
-%         x(4:6,n+1) = states(4:6,n+1);
-%     end
+    x(3,n+1) = wrapToPi(x(3,n+1)); % to [-pi, pi]
     
-    %k-step ahead estiamtion (sync at every-k loop)
+    if abs(x(4,n+1)) > 30
+        x(4,n+1) = sign(x(4,n+1)) * 30;
+    end
+    
+    if abs(x(6,n+1)) > 5
+        x(6,n+1) = sign(x(6,n+1)) * 5;
+    end
+
+
+    
+%     k-step ahead estiamtion (sync at every-k loop)
 %     k = desiredFs;
 %     if mod(n, k) == 0
-%         x(:,n+1) = states(:,n+1);
+%           x([1:3, 6], n+1) = states([1:3, 6], n+1);
+%           ef2bf_m = [cos(x(3, n+1)), sin(x(3, n+1));
+%                     -sin(x(3, n+1)), cos(x(3, n+1))];
+%           x(4:5, n+1) = ef2bf_m * states(4:5, n+1);
 %     end
-%     
+    
     err(:, n) = abs(y(:, n) - states(:, n));
 end
 
@@ -305,7 +270,7 @@ model = nlgreyest(data, nlgr_m, opt);    %Estimate nonlinear grey-box model para
 present(model);
 figure; compare(model, data);
 
-return
+% return
 %%===================================================
 %% plot results
 %%
