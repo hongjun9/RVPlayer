@@ -1,6 +1,6 @@
 clear;
 close all;
-filename = 'Test6/00000012.csv';
+filename = 'Test6/00000028.csv';
 train_data = csvread(filename, 2, 0);  
 % states(x) [x y yaw vx vy r] 
 % vx: longitudinal velocity (body frame), vy: lateral velocity (body frame)
@@ -150,6 +150,10 @@ for n=1:N-1
         x(4,n+1) = sign(x(4,n+1)) * 30;
     end
     
+    if abs(x(5,n+1)) > 30
+        x(5,n+1) = sign(x(5,n+1)) * 30;
+    end
+    
     if abs(x(6,n+1)) > 5
         x(6,n+1) = sign(x(6,n+1)) * 5;
     end
@@ -164,7 +168,7 @@ for n=1:N-1
 %                     -sin(x(3, n+1)), cos(x(3, n+1))];
 %           x(4:5, n+1) = ef2bf_m * states(4:5, n+1);
 %     end
-    
+%     
     err(:, n) = abs(y(:, n) - states(:, n));
 end
 
@@ -197,7 +201,7 @@ end
 %     legend('State', 'Model');
 
 
-% return
+return
 
 %====================================
 %% Nonlinear grey-box model - idnlgrey
