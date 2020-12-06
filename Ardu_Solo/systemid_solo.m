@@ -101,20 +101,20 @@ g = 9.80665;   % gravity acceleration constant (m/s^2)
 thetas = [deg2rad(45), deg2rad(-135), deg2rad(-45), deg2rad(135)];
 
 m = 1.5;
-I_x = 0.015; %16365151e-9; %16365151e-9;      % Inertia (kg*m^2)
-I_y = 0.015; %8354114e-9;    %8354114e-9;
-I_z = 0.015; %24008439e-9;  %24008439e-9;
+I_x = 0.010; %16365151e-9; %16365151e-9;      % Inertia (kg*m^2)
+I_y = 0.010; %8354114e-9;    %8354114e-9;
+I_z = 0.018; %24008439e-9;  %24008439e-9;
 
 % alpha = 9.6;
 % throttle_hover = 0.51; %0.5595;%0.51; %0.7;    % (%)  (1559-1100)/900=0.51
 
 % K_T = m*g / (4*throttle_hover);   % = 7.2108
-K_T = 7.2108;
+K_T = 9.2108;
 
 % K_Q = yaw_scale * I_z;          % = 6.9813 * 0.015 = 0.1187
 K_Q = 0.1187;
 
-arm_length = 0.19;
+arm_length = 0.21;
 %a=d, b=c
 a =  sin(thetas(1))* arm_length; 
 b =  cos(thetas(1)) * arm_length;    
