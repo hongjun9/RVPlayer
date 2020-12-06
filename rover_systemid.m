@@ -1,6 +1,6 @@
 clear;
 close all;
-filename = 'Test6/00000028.csv';
+filename = 'Test6/00000027.csv';
 train_data = csvread(filename, 2, 0);  
 % states(x) [x y yaw vx vy r] 
 % vx: longitudinal velocity (body frame), vy: lateral velocity (body frame)
@@ -62,7 +62,7 @@ raw_motors(:,3:4) = [];
 
 
 %%resample (for uniform sampling time)
-desiredFs = 400; %(default 50Hz)
+desiredFs = 50; %(default 50Hz)
 Ts = 1/desiredFs;
 [res_states, res_timestamps] = resample(raw_states,raw_timestamps,desiredFs);
 [res_motors, res_timestamps] = resample(raw_motors,raw_timestamps,desiredFs);
@@ -70,7 +70,7 @@ N = size(res_timestamps,1);
 
 %%states start from zero
 % res_states = res_states - res_states(1,:);
-res_states(1,4) = 0.1;
+% res_states(1,4) = 0.1;
 res_states(:, 3) = wrapToPi(res_states(:, 3));
 
 %plot (original and sampeled)
@@ -114,7 +114,7 @@ motors = res_motors';
 % Cx = 17000
 % Cy = 2500
 % CA = 170.6
-m = 1.7
+m = 3
 a = 0.5
 b = 0.7
 Cx = 17
@@ -158,7 +158,12 @@ for n=1:N-1
         x(6,n+1) = sign(x(6,n+1)) * 5;
     end
 
-
+    if n * dt < 2
+          x([1:3, 6], n+1) = states([1:3, 6], n+1);
+          ef2bf_m = [cos(x(3, n+1)), sin(x(3, n+1));
+                    -sin(x(3, n+1)), cos(x(3, n+1))];
+          x(4:5, n+1) = ef2bf_m * states(4:5, n+1);
+    end
     
 %     k-step ahead estiamtion (sync at every-k loop)
 %     k = desiredFs;

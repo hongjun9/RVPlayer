@@ -6,18 +6,25 @@ model_file = strcat(currentFolder, '/model_sitl_rover.mat');
 load(model_file); % read model
 
 %nonlinear greybox model
-present(model);
-m = model.Parameters(1).Value;
-a = model.Parameters(2).Value;
-b = model.Parameters(3).Value;
-Cx = model.Parameters(4).Value;
-Cy = model.Parameters(5).Value;
-CA = model.Parameters(6).Value; 
+% present(model);
+% m = model.Parameters(1).Value;
+% a = model.Parameters(2).Value;
+% b = model.Parameters(3).Value;
+% Cx = model.Parameters(4).Value;
+% Cy = model.Parameters(5).Value;
+% CA = model.Parameters(6).Value; 
+
+m = 1.7
+a = 0.5
+b = 0.7
+Cx = 17
+Cy = 17
+CA = 0.1706
 
 %%%%%
 % important paraemters for compression
 max_freq = 50;
-sync_k = 1; %max_freq*10;     % 5 (sec)
+sync_k = max_freq; %max_freq*10;     % 5 (sec)
 is_lowpass = 1;
 lowpass_w = 10;
 adaptive_order = 1;
@@ -33,7 +40,7 @@ reference_motor = 0.04; % 1500 +- 40 pwm
 
 
 %% Read test data
-filename = 'Test6/00000028.csv';
+filename = 'Test6/00000012.csv';
 test_data = csvread(filename, 2, 0);
 refer_idx = find(abs(test_data(:, 16)-0.5) >= reference_motor, 1);
 reference_time = test_data(refer_idx, 1); % test_data(1, 1)
@@ -147,14 +154,22 @@ for n=1:N-1
         x(6,n+1) = sign(x(6,n+1)) * 5;
     end
     
-%     k-step ahead estiamtion (sync at every-k loop)
-    k = sync_k;
-    if mod(n, k) == 0
+    if n*dt < 2
           x([1:3, 6], n+1) = states([1:3, 6], n+1);
           ef2bf_m = [cos(x(3, n+1)), sin(x(3, n+1));
                     -sin(x(3, n+1)), cos(x(3, n+1))];
           x(4:5, n+1) = ef2bf_m * states(4:5, n+1);
     end
+    
+    
+% %     k-step ahead estiamtion (sync at every-k loop)
+%     k = sync_k;
+%     if mod(n, k) == 0
+%           x([1:3, 6], n+1) = states([1:3, 6], n+1);
+%           ef2bf_m = [cos(x(3, n+1)), sin(x(3, n+1));
+%                     -sin(x(3, n+1)), cos(x(3, n+1))];
+%           x(4:5, n+1) = ef2bf_m * states(4:5, n+1);
+%     end
 
 end
 
@@ -194,7 +209,7 @@ for n=1:NY
     legend('State', 'Model prediction',  'Error');
 end
 
-
+return;
 
 figure;
 
