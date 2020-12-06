@@ -38,16 +38,12 @@ reference_motor = 0.3; % 1300 pwm
 
 
 %% Read test data
-filename = 'Test3/00000284.csv';
+filename = 'Test3/00000294.csv';
 test_data = csvread(filename, 2, 0);
 refer_idx = find(test_data(:, 14) >= reference_motor, 1);
 reference_time = test_data(refer_idx, 1); % test_data(1, 1)
 test_data(:, 1) = test_data(:, 1)-reference_time; % reset start time
-%trim data (remove unnecessary parts with starting point (s) and end point (s)
-%     sp = 2; % starting skip (s)
-%     isp = find(test_data(:,1) * 1e-6 > sp, 1);
-%     ep = 10; % end skip (s)
-%     iep = find(test_data(:,1) > test_data(end,1) - ep * 1e6, 1);
+%trim data (remove unnecessary parts)
     isp = refer_idx + 1* max_freq;
     iep = find(test_data(:, 14) >= reference_motor,1,'last') - 2 * max_freq;
     test_data = test_data(isp:iep, :);
@@ -221,7 +217,7 @@ for n=1:2
     plot (t, actual_log_freqs(n, :));
 end
 
-
+return;
 
 
 %% write data

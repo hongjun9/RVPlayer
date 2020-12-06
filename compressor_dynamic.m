@@ -22,27 +22,38 @@ K_Q = model.Parameters(10).Value;
 %%%%%
 % important paraemters for compression
 max_freq = 400;
-sync_k = max_freq*5;     % 5 (sec)
+sync_k = 1;     % 5 (sec)
 load('error_thresh.mat');
 err_thresh(2) = 4           %TODO: set the treshold for each state
+reference_motor = 0.3; % 1300 pwm
 %%%%%
 
 
 
 %% Read test data
-filename = 'Test3/00000153.csv';
-test_data = csvread(filename, 2, 0);  
-test_data(:, 1) = test_data(:, 1)-test_data(1, 1); % reset start time
-%trim data (remove unnecessary parts with starting point (s) and end point (s)
-    sp = 1; % starting point (s)
-    ep = 270; % end point (s)
-    isp = find(test_data(:,1) * 1e-6 > sp, 1);
-    iep = find(test_data(:,1) * 1e-6 > ep, 1);
-    if isempty(iep)
-        iep = size(test_data,1);
-    end
+filename = 'Test3/00000290.csv';
+% test_data = csvread(filename, 2, 0);  
+% test_data(:, 1) = test_data(:, 1)-test_data(1, 1); % reset start time
+% %trim data (remove unnecessary parts with starting point (s) and end point (s)
+%     sp = 1; % starting point (s)
+%     ep = 270; % end point (s)
+%     isp = find(test_data(:,1) * 1e-6 > sp, 1);
+%     iep = find(test_data(:,1) * 1e-6 > ep, 1);
+%     if isempty(iep)
+%         iep = size(test_data,1);
+%     end
+%     test_data = test_data(isp:iep, :);
+
+test_data = csvread(filename, 2, 0);
+refer_idx = find(test_data(:, 14) >= reference_motor, 1);
+reference_time = test_data(refer_idx, 1); % test_data(1, 1)
+test_data(:, 1) = test_data(:, 1)-reference_time; % reset start time
+%trim data (remove unnecessary parts?
+    isp = refer_idx + 1* max_freq;
+    iep = find(test_data(:, 14) >= reference_motor,1,'last') -200 * max_freq;
     test_data = test_data(isp:iep, :);
 
+    
 NX = 12;    
 NY = 12;
 NU = 4;
@@ -86,10 +97,11 @@ global frame_height;
 frame_height = 0.1;
 for n=1:N-1
     dt = t(n+1) - t(n);
-    [dx(:,n),y(:,n)] = quadrotor_m(t(n), x(:,n), u(:,n), a,b,c,d, m, I_x, I_y, I_z, K_T, K_Q);
+    [dx(:,n),~] = quadrotor_m(t(n), x(:,n), u(:,n), a,b,c,d, m, I_x, I_y, I_z, K_T, K_Q);
+%     [dx(:,n),y(:,n)] = quadrotor_m(t(n), x(:,n), u(:,n), a,b,c,d, m, I_x, I_y, I_z, K_T, K_Q);
     x(:,n+1) = x(:,n) + dx(:,n) * dt; 
     x(6,n+1) = mod(x(6,n+1), 2*pi); % wrap yaw to [0,2pi)
-    
+    y(:, n+1) = x(:,n+1);
     %========= on ground check ==========
     if on_ground(x(3, n+1), frame_height)
         x(3, n+1) = frame_height; % z ;
@@ -100,10 +112,10 @@ for n=1:N-1
             x(9, n+1) = 0; %vz = 0;
         end
     end
-    if n * dt < 10
-        x(10:12,n+1) = states(10:12,n+1);
-        x(4:6,n+1) = states(4:6,n+1);
-    end
+%     if n * dt < 10
+%         x(10:12,n+1) = states(10:12,n+1);
+%         x(4:6,n+1) = states(4:6,n+1);
+%     end
     
     %k-step ahead estiamtion (sync at every-k loop)
     if mod(n, sync_k) == 0
@@ -155,36 +167,36 @@ end
 
 %
 % =============== offline regeneration
-for n=1:N-1
-    dt = t(n+1) - t(n);
-    [dx(:,n),y2(:,n)] = quadrotor_m(t(n), x(:,n), u(:,n), a,b,c,d, m, I_x, I_y, I_z, K_T, K_Q);
-    x(:,n+1) = x(:,n) + dx(:,n) * dt; 
-    x(6,n+1) = mod(x(6,n+1), 2*pi); % wrap yaw to [0,2pi)
-    
-    %========= on ground check ==========
-    if on_ground(x(3, n+1), frame_height)
-        x(3, n+1) = frame_height; % z ;
-        x(4:5,n+1) = 0; % roll = pitch = 0;
-        x(7:8, n+1) = 0; % vx = vy = 0;
-        x(10:12, n+1) = 0; %pqr = 0;
-        if x(9, n+1) < 0
-            x(9, n+1) = 0; %vz = 0;
-        end
-    end
-    if n * dt < 10
-        x(10:12,n+1) = states(10:12,n+1);
-        x(4:6,n+1) = states(4:6,n+1);
-    end
-    
-    %sync
-    for i=1:NY
-        if ~(isnan(yc(i,n+1)))
-            x(i,n+1) = yc(i,n+1);
-        else
-            yo(i,n+1) = x(i,n+1);
-        end
-    end
-end
+% for n=1:N-1
+%     dt = t(n+1) - t(n);
+%     [dx(:,n),y2(:,n)] = quadrotor_m(t(n), x(:,n), u(:,n), a,b,c,d, m, I_x, I_y, I_z, K_T, K_Q);
+%     x(:,n+1) = x(:,n) + dx(:,n) * dt; 
+%     x(6,n+1) = mod(x(6,n+1), 2*pi); % wrap yaw to [0,2pi)
+%     
+%     %========= on ground check ==========
+%     if on_ground(x(3, n+1), frame_height)
+%         x(3, n+1) = frame_height; % z ;
+%         x(4:5,n+1) = 0; % roll = pitch = 0;
+%         x(7:8, n+1) = 0; % vx = vy = 0;
+%         x(10:12, n+1) = 0; %pqr = 0;
+%         if x(9, n+1) < 0
+%             x(9, n+1) = 0; %vz = 0;
+%         end
+%     end
+%     if n * dt < 10
+%         x(10:12,n+1) = states(10:12,n+1);
+%         x(4:6,n+1) = states(4:6,n+1);
+%     end
+%     
+%     %sync
+%     for i=1:NY
+%         if ~(isnan(yc(i,n+1)))
+%             x(i,n+1) = yc(i,n+1);
+%         else
+%             yo(i,n+1) = x(i,n+1);
+%         end
+%     end
+% end
 
 w = 100;
 for i = 1:N
@@ -207,16 +219,23 @@ for n=1:NY
     plot(timestamps, states(n,:),'k-');     %truth
     hold on;
     plot(timestamps, yc(n,:), 'ro');        %logging points
-    hold on;
-    plot(timestamps, yo(n,:), 'b.');        %regenerated points
+%     hold on;
+%     plot(timestamps, yo(n,:), 'b.');        %regenerated points
     hold on;
     plot(t, y(n,:), 'b--');                  %model prediction
     hold on;
     yyaxis right
-    area(t, abs(states(n,:)-y(n,:)), 'FaceAlpha', 0.8, 'EdgeColor', 'none');    % deviation
-    plot(t, th(n)*ones(1, length(t)), 'g');
-    ylim([0,10]);
-    legend('State', 'Log', 'Prediction','Model prediction',  'Error', 'Error max thres');
+    area(t, err(n,:), 'FaceAlpha', 0.8, 'EdgeColor', 'none');    % deviation
+%     plot(t, y(n,:) - states(n,:));    % deviation
+    sum(y(n,:) - states(n,:))
+    mean_err = mean(err(n,:));
+    std_err = std(err(n,:));
+    ylim([0,3* mean_err]);
+    plot(t, mean_err*ones(1, length(t)), 'g');
+%     plot(t, th(n)*ones(1, length(t)), 'g');
+%     ylim([0,10]);
+%     legend('State', 'Log', 'Prediction','Model prediction',  'Error', 'Error max thres');
+    legend('State', 'Log', 'Model prediction',  'Error', 'Mean Error');
 end
   
 
