@@ -2,7 +2,7 @@ clear;
 close all;
 addpath('../', '-end');
 
-filename = '../Test5/135.csv';
+filename = '../Test5/190.csv';
 train_data = csvread(filename, 2, 0);  
 % states [x y z roll pitch yaw vx vy vz p q r]
 % output = states
@@ -14,7 +14,7 @@ NU = 4;
 %reset start time
 train_data(:,1) = train_data(:,1) - train_data(1,1);
 %trim data (remove unnecessary parts with starting point (s) and end point (s)
-    sp = 5; % starting skip (s)
+    sp = 10; % starting skip (s)
     ep = 5; % end skip (s)
     isp = find(train_data(:,1) * 1e-6 >= sp, 1);
     iep = find(train_data(:,1) >= train_data(end,1) - ep * 1e6, 1);
@@ -101,18 +101,18 @@ g = 9.80665;   % gravity acceleration constant (m/s^2)
 thetas = [deg2rad(45), deg2rad(-135), deg2rad(-45), deg2rad(135)];
 
 m = 1.5;
-I_x = 0.010; %16365151e-9; %16365151e-9;      % Inertia (kg*m^2)
-I_y = 0.010; %8354114e-9;    %8354114e-9;
-I_z = 0.018; %24008439e-9;  %24008439e-9;
+I_x = 0.037; 
+I_y = 0.038; 
+I_z = 0.04;
 
 % alpha = 9.6;
 % throttle_hover = 0.51; %0.5595;%0.51; %0.7;    % (%)  (1559-1100)/900=0.51
 
 % K_T = m*g / (4*throttle_hover);   % = 7.2108
-K_T = 9.2108;
+K_T =  8.35;
 
 % K_Q = yaw_scale * I_z;          % = 6.9813 * 0.015 = 0.1187
-K_Q = 0.1187;
+K_Q = 0.3187;
 
 arm_length = 0.21;
 %a=d, b=c

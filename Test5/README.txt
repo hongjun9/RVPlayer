@@ -46,3 +46,8 @@ https://www.notion.so/bobcheng/Real-Attack-Test-83db042416e2447ca8fe12e464faeaef
 - 187 — plan v10 attack scale 30, wind
 - 188 — plan v10 `ATC_RAT_RLL_P` attack scale 3, wind
 - 189 — plan v10 `ATC_RAT_RLL_P` attack scale 1, wind
+
+=======complex task===============
+190,191, 192: complex square rp0
+193, 194: complex square rp1
+195: complex square rp2

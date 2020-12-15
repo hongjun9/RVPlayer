@@ -27,29 +27,29 @@ b =  cos(thetas(1)) * arm_length;
 c = -cos(thetas(4)) * arm_length;    
 d =  sin(thetas(4)) * arm_length;
 m = 1.5;
-I_x = 0.010; 
-I_y = 0.010; 
-I_z = 0.018;
-K_T = 9.2108;
-K_Q = 0.1187;
+I_x = 0.037; 
+I_y = 0.038; 
+I_z = 0.04;
+K_T = 8.35;
+K_Q = 0.3187;
 
 
 %%
 %%%%%
 % important paraemters for compression
 max_freq = 100;
-sync_k = 1; %max_freq*10;     % 5 (sec)
+sync_k = 1; %max_freq*10;     
 is_lowpass = 1;
 lowpass_w = 10;
 adaptive_order = 1;
 
-L_norm = [0, 0];
+% L_norm = [0, 0];
 
-% if is_lowpass
-%     load disturb_L_norm_filtered.mat
-% else
-%     load disturb_L_norm.mat
-% end
+if is_lowpass
+    load disturb_L_norm_filtered.mat
+else
+    load disturb_L_norm.mat
+end
 
 
 
@@ -59,14 +59,16 @@ reference_motor = 0.3; % 1300 pwm
 
 
 %% Read test data
-filename = '../Test5/160.csv';
+filename = '../Test5/157.csv';
 test_data = csvread(filename, 2, 0);
 refer_idx = find(test_data(:, 14) >= reference_motor, 1);
 reference_time = test_data(refer_idx, 1); % test_data(1, 1)
 test_data(:, 1) = test_data(:, 1)-reference_time; % reset start time
 %trim data (remove unnecessary parts)
-    isp = refer_idx;
+    isp = refer_idx + 3 * max_freq;
     iep = find(test_data(:, 14) >= reference_motor,1,'last') - 2 * max_freq;
+%     isp = refer_idx + 4 * max_freq;
+%     iep = refer_idx + 14 * max_freq;
     test_data = test_data(isp:iep, :);
 
 NX = 12;    
@@ -191,7 +193,7 @@ acc_norms = [line_acc_norm; rot_acc_norm]';
 
 %======== adaptive log =============
 actual_log_freqs = zeros(2, N);
-w_sz = 400;
+w_sz = max_freq;
 for i = 1:N
     actual_log_freqs(:, i) = sum(accel_log_record(:, max(1, i-w_sz/2+1):min(i+w_sz/2, N)), 2) / w_sz * max_freq;
 end
@@ -251,7 +253,7 @@ end
 %% write data
 
 sync_log_k = max_freq;
-sync_data = test_data(1:sync_log_k:end, 1:13); % NED frame
+sync_data = test_data(1:sync_log_k/10:end, 1:13); % NED frame
 T_syn = array2table(sync_data);
 T_syn.Properties.VariableNames(1:13) = {'Time_us','x','y', 'z', 'roll', 'pitch', 'yaw',...
     'V_x', 'V_y', 'V_z', 'Gyro_x', 'Gyro_y', 'Gyro_z'};
@@ -277,16 +279,17 @@ T_disturb_rot.Properties.VariableNames(1:4) = {'Time_us','angl_accel_x', 'angl_a
 writetable(T_disturb_lin,[filename(1: end-4) '_disturb_lin.csv']);
 writetable(T_disturb_rot,[filename(1: end-4) '_disturb_rot.csv']);
 
-return;
+% return;
 
-%% Statistical calculation
+%% Statistical calculation (scaled to 400Hz)
 kbps2gbpd = 0.0864;
-main_data_rate = 117 * max_freq / 1000; %kb/s
+main_data_rate = 117 * 400 / 1000 %kb/s
 other_data_rate = 14.583; %kb/s
 all_data_rate = main_data_rate + other_data_rate
-logged_data_size =4*(sum(sum(accel_log_record)) * 3 + size(sync_data, 1) * (2 + 12)); %Bytes
-total_time = N / max_freq; %s
+logged_data_size =4*(sum(sum(accel_log_record)) * 3 + size(sync_data, 1) / 10 * (2 + 12)); %Bytes
+total_time = N / 400; %s
 processed_data_rate = logged_data_size / total_time  / 1000 %kb/s
 final_data_rate = processed_data_rate + other_data_rate
 compression_rate = final_data_rate / all_data_rate
+main_data_compression_rate = processed_data_rate / main_data_rate
 
