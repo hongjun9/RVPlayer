@@ -11,7 +11,9 @@ APMRover2 SITL Rover
 23. sand (4m/s wind)
 24. grass (14m/s wind)
 
-========= add wind air resistence ==============
+========= add wind air resistence ============== 
+(to use the following data, uncomment the four lines (34-37) adding air disturbance in rover_m.m)
+
 26: North with disturbance
 27: star shape 20m/s wind towards south
 28: zig-zag north with 20m/s wind towards south

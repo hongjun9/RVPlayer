@@ -31,10 +31,10 @@ function [dx, y] = rover_m(t, x, i, m, a, b, Cx, Cy, CA, varargin)
 %     y(3) = x(3);    
 
     % air resistance
-    g = 9.80665;
-    terminal_velocity = 15; 
-    air_resistance = -x(4) * g / terminal_velocity;       % *0.6538
-    dx(4) = dx(4) + air_resistance;
+%     g = 9.80665;
+%     terminal_velocity = 15; 
+%     air_resistance = -x(4) * g / terminal_velocity;       % *0.6538
+%     dx(4) = dx(4) + air_resistance;
     
     %(NED world frame)
     %y(1): Postion X

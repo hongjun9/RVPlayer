@@ -1,6 +1,6 @@
 clear;
 close all;
-filename = 'Test6/00000027.csv';
+filename = 'Test6/00000012.csv';
 train_data = csvread(filename, 2, 0);  
 % states(x) [x y yaw vx vy r] 
 % vx: longitudinal velocity (body frame), vy: lateral velocity (body frame)
@@ -114,7 +114,7 @@ motors = res_motors';
 % Cx = 17000
 % Cy = 2500
 % CA = 170.6
-m = 3
+m = 1.7
 a = 0.5
 b = 0.7
 Cx = 17
@@ -157,8 +157,9 @@ for n=1:N-1
     if abs(x(6,n+1)) > 5
         x(6,n+1) = sign(x(6,n+1)) * 5;
     end
-
-    if n * dt < 2
+    
+    % sycn all states in the begining 2s
+    if n * dt < 10
           x([1:3, 6], n+1) = states([1:3, 6], n+1);
           ef2bf_m = [cos(x(3, n+1)), sin(x(3, n+1));
                     -sin(x(3, n+1)), cos(x(3, n+1))];
