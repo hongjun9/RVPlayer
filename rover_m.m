@@ -1,12 +1,18 @@
 %IDNLGREY model file (discrete-time nonlinear model) : 
 %xn = x(t+Ts) : state update values in discrete-time case (A column vector with Nx entries)
 %y : outputs values (A column vector with Ny entries)
-function [dx, y] = rover_m(t, x, i, m, a, b, Cx, Cy, CA, varargin)
+function [dx, y, terms] = rover_m(t, x, i, m, a, b, Cx, Cy, CA, varargin)
     u = zeros(5,1);
-    u(1) = i(2);
-    u(2) = i(2);
-    u(3) = 0;
-    u(4) = 0;
+%     u(1) = i(2);
+%     u(2) = i(2);
+%     u(3) = 0;
+%     u(4) = 0;
+%     u(5) = i(1);
+    
+    u(1) = 0;
+    u(2) = 0;
+    u(3) = i(2);
+    u(4) = i(2);
     u(5) = i(1);
     
     % NED frame
@@ -17,7 +23,7 @@ function [dx, y] = rover_m(t, x, i, m, a, b, Cx, Cy, CA, varargin)
     %x(5): Lateral velocity. (body frame)
     %x(6): Yaw rate. 
     
-    dx = rover_odefun(x, u, m, a, b, Cx, Cy, CA);      
+    [dx, terms] = rover_odefun(x, u, m, a, b, Cx, Cy, CA);      
     
 %     m = p(1);
 %     a = p(2);
@@ -31,10 +37,10 @@ function [dx, y] = rover_m(t, x, i, m, a, b, Cx, Cy, CA, varargin)
 %     y(3) = x(3);    
 
     % air resistance
-%     g = 9.80665;
-%     terminal_velocity = 15; 
-%     air_resistance = -x(4) * g / terminal_velocity;       % *0.6538
-%     dx(4) = dx(4) + air_resistance;
+    g = 9.80665;
+    terminal_velocity = 15; 
+    air_resistance = -x(4) * g / terminal_velocity;       % *0.6538
+    dx(4) = dx(4) + air_resistance;
     
     %(NED world frame)
     %y(1): Postion X

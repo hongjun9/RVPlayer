@@ -18,3 +18,12 @@ APMRover2 SITL Rover
 27: star shape 20m/s wind towards south
 28: zig-zag north with 20m/s wind towards south
 29: for calculating L_norm, north moving, 20m/s wind
+
+88? complex mission, square shape, with wind speed 0
+119? simple mission, straight north, with wind speed 0
+120: small effect, straight north, with wind speed 2
+121: mid effect, straight north, with wind speed 6
+122: strong effect, straight north, with wind speed 14
+
+133: simple mission, straight north, with wind speed 0
+134: strong effect, straight north, with wind speed 14
