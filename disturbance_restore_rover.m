@@ -24,7 +24,7 @@ CA = 0.1706
 %%%%%
 % important paraemters for compression
 max_freq = 50;
-sync_k = max_freq; %max_freq*10;     % 5 (sec)
+sync_k = 1; %max_freq*10;     % 5 (sec)
 is_lowpass = 1;
 lowpass_w = 10;
 adaptive_order = 1;
@@ -34,20 +34,22 @@ else
     load disturb_L_norm_rover.mat
 end
 
+% L_norm = [0.2,0.03];
+
 reference_motor = 0.04; % 1500 +- 40 pwm
 %%%%%
 
 
 
 %% Read test data
-filename = 'Test6/00000012.csv';
+filename = 'Test6/00000134.csv';
 test_data = csvread(filename, 2, 0);
 refer_idx = find(abs(test_data(:, 16)-0.5) >= reference_motor, 1);
 reference_time = test_data(refer_idx, 1); % test_data(1, 1)
 test_data(:, 1) = test_data(:, 1)-reference_time; % reset start time
 %trim data (remove unnecessary parts with starting point (s) and end point (s)
-    isp = refer_idx + 2 * max_freq;
-    iep = find(abs(test_data(:, 16)-0.5) >= reference_motor,1,'last') - 2 * max_freq;
+    isp = refer_idx + 1 * max_freq;
+    iep = find(abs(test_data(:, 16)-0.5) >= reference_motor,1,'last');
     test_data = test_data(isp:iep, :);
 
 NX = 6;    
@@ -68,7 +70,7 @@ raw_states(:,5) = raw_states(:,8);
 raw_states(:,6) = raw_states(:,12);
 raw_states(:,7:12) = [];
 
-raw_states(:,3) = wrapToPi(raw_states(:,3));
+raw_states(:,3) = wrapTo2Pi(raw_states(:,3));
 
 % convert input signals
 % steering (motor1) : 0-0.5 is left turn, 0.5-1 is right turn. => pi
@@ -85,14 +87,24 @@ motors = raw_motors';
 %========== add acceleration AND disturbance data ============
 N = N-1;
 accel_states = (states(4:6, 2:end)-states(4:6, 1:end-1))./(timestamps(2:end) - timestamps(1:end-1));
+
+% accel_states_bf = [accel_states(1,:) .* cos(states(3,:)) + accel_states(2,:).* sin(states(3,:));...
+%     -accel_states(1,:) .* sin(states(3,:)) + accel_states(2,:).* cos(states(3,:));...
+%     accel_states(3, :)];
+% accel_states = accel_states_bf;
+vel_states = states(4:6, :);
+vel_states_bf = [vel_states(1,:) .* cos(states(3,:)) + vel_states(2,:).* sin(states(3,:));...
+    -vel_states(1,:) .* sin(states(3,:)) + vel_states(2,:).* cos(states(3,:));...
+    vel_states(3, :)];
+
+accel_states_bf = (vel_states_bf(:, 2:end) - vel_states_bf(:, 1:end-1)) ./ (timestamps(2:end) - timestamps(1:end-1));
+accel_states = accel_states_bf;
+
+vel_states_bf = vel_states_bf(:, 1:end-1);
+states = states(:, 1:end-1);
 timestamps = timestamps(1:end-1);
 time_us = time_us(1:end-1);
-states = states(:, 1:end-1);
 motors = motors(:, 1:end-1);
-accel_states_bf = [accel_states(1,:) .* cos(states(3,:)) + accel_states(2,:).* sin(states(3,:));...
-    -accel_states(1,:) .* sin(states(3,:)) + accel_states(2,:).* cos(states(3,:));...
-    accel_states(3, :)];
-accel_states = accel_states_bf;
 % wind_window = [86066393, 90298866] - reference_time;
 
 
@@ -135,7 +147,7 @@ for n=1:N-1
         log_reference =  disturb_accel;
     end
     lin_acc = norm(log_reference(1:2));
-    rot_acc = log_reference(3);
+    rot_acc = abs(log_reference(3));
     is_log = islog_disturb(lin_acc, rot_acc ,L_norm, adaptive_order, max_freq, last_log_time, t(n+1));
     accel_log_record(:, n+1) = is_log';
     for i = 1:2
@@ -144,7 +156,7 @@ for n=1:N-1
         end
     end
     x(:,n+1) = x(:,n) + dx(:,n) * dt; 
-    x(3,n+1) = wrapToPi(x(3,n+1)); % wrap yaw to [0,2pi)
+    x(3,n+1) = wrapTo2Pi(x(3,n+1)); % wrap yaw to [0,2pi)
     
     if abs(x(4,n+1)) > 30
         x(4,n+1) = sign(x(4,n+1)) * 30;
@@ -154,22 +166,22 @@ for n=1:N-1
         x(6,n+1) = sign(x(6,n+1)) * 5;
     end
     
-    if n*dt < 2
-          x([1:3, 6], n+1) = states([1:3, 6], n+1);
-          ef2bf_m = [cos(x(3, n+1)), sin(x(3, n+1));
-                    -sin(x(3, n+1)), cos(x(3, n+1))];
-          x(4:5, n+1) = ef2bf_m * states(4:5, n+1);
-    end
-    
-    
-% %     k-step ahead estiamtion (sync at every-k loop)
-%     k = sync_k;
-%     if mod(n, k) == 0
+%     if n*dt < 2
 %           x([1:3, 6], n+1) = states([1:3, 6], n+1);
 %           ef2bf_m = [cos(x(3, n+1)), sin(x(3, n+1));
 %                     -sin(x(3, n+1)), cos(x(3, n+1))];
 %           x(4:5, n+1) = ef2bf_m * states(4:5, n+1);
 %     end
+    
+    
+%     k-step ahead estiamtion (sync at every-k loop)
+    k = sync_k;
+    if mod(n, k) == 0
+          x([1:3, 6], n+1) = states([1:3, 6], n+1);
+          ef2bf_m = [cos(x(3, n+1)), sin(x(3, n+1));
+                    -sin(x(3, n+1)), cos(x(3, n+1))];
+          x(4:5, n+1) = ef2bf_m * states(4:5, n+1);
+    end
 
 end
 
@@ -181,7 +193,7 @@ else
     full_disturb =  origin_disturb';
 end
 line_acc_norm = vecnorm(full_disturb(: , 2:3)');
-rot_acc_norm = full_disturb(:, 4)';
+rot_acc_norm = abs(full_disturb(:, 4)');
 acc_norms = [line_acc_norm; rot_acc_norm]';
 
 actual_log_freqs = zeros(2, N);
@@ -209,21 +221,8 @@ for n=1:NY
     legend('State', 'Model prediction',  'Error');
 end
 
-return;
+% return;
 
-figure;
-
-for n=1:3
-    subplot(2,3, n);
-    yyaxis left
-    plot(timestamps, accel_states(n,:),'k-');     %truth
-    hold on;
-    plot(t, y_accel(n,:), 'b--');                  %model prediction
-    hold on;
-    yyaxis right
-    area(t, abs(accel_states(n,:)-y_accel(n,:)), 'FaceAlpha', 0.8, 'EdgeColor', 'none');    % deviation
-    legend('State', 'Model prediction',  'Error');
-end
 
 figure;
 
@@ -236,12 +235,46 @@ for n=1:2
     plot (t, actual_log_freqs(n, :));
 end
 
+figure;
+for n=1:6
+    subplot(3, 3, n);
+    if n <= 3
+        plot(t, states(n,:), 'k-');  
+    else
+        plot(t, vel_states_bf(n-3, :), 'k-');
+    end
+    hold on;
+    plot(timestamps, x(n,:),'b--');
+    legend('State', 'Model prediction')
+end
 
 
+for n=1:3
+    subplot(3,3, 6+n);
+    yyaxis left
+    plot(timestamps, accel_states(n,:),'k-');     %truth
+    hold on;
+    plot(t, y_accel(n,:), 'b--');                  %model prediction
+    hold on;
+    yyaxis right
+    area(t, accel_states(n,:)-y_accel(n,:), 'FaceAlpha', 0.8, 'EdgeColor', 'none');    % deviation
+    legend('State', 'Model prediction',  'Error');
+end
+
+% for i=1:3
+%     subplot(3,3,i+6);
+%     plot(timestamps, dx(i+3,:),'r.-');
+%     hold on;
+% %     plot(t, x(n,:), 'b-');  
+%     legend('body State');
+% end
+
+
+% return;
 
 %% write data
 
-sync_log_k = max_freq;
+sync_log_k = max_freq/10;
 sync_data = test_data(1:sync_log_k:end, [1:3, 7:9, 13]); % NED frame
 T_syn = array2table(sync_data);
 % T_syn.Properties.VariableNames(1:13) = {'Time_us','x','y', 'z', 'roll', 'pitch', 'yaw',...
@@ -271,13 +304,15 @@ writetable(T_disturb_lin,[filename(1: end-4) '_disturb_lin.csv']);
 writetable(T_disturb_rot,[filename(1: end-4) '_disturb_rot.csv']);
 
 %% Statistical calculation
-% kbps2gbpd = 0.0864;
-% main_data_rate = 117 * max_freq / 1000; %kb/s
+kbps2gbpd = 0.0864;
+main_data_rate = 80 * max_freq / 1000 * kbps2gbpd %gb/d
 % other_data_rate = 14.583; %kb/s
 % all_data_rate = main_data_rate + other_data_rate
-% logged_data_size =4*(sum(sum(accel_log_record)) * 3 + size(sync_data, 1) * (2 + 12)); %Bytes
-% total_time = N / max_freq; %s
-% processed_data_rate = logged_data_size / total_time  / 1000 %kb/s
+logged_data_size =4*(sum(sum(accel_log_record)) * 1 + size(sync_data, 1) / 10 * (2 + 6)); %Bytes
+total_time = N / max_freq; %s
+processed_data_rate = logged_data_size / total_time  / 1000 * kbps2gbpd %gb/d
 % final_data_rate = processed_data_rate + other_data_rate
 % compression_rate = final_data_rate / all_data_rate
+main_data_compression_rate = processed_data_rate / main_data_rate
+
 

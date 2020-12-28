@@ -1,7 +1,8 @@
 clear;
-close all;
-filename = 'Test6/00000012.csv';
+% close all;
+filename = 'Test6/00000088.csv';
 train_data = csvread(filename, 2, 0);  
+reference_motor = 0.04;
 % states(x) [x y yaw vx vy r] 
 % vx: longitudinal velocity (body frame), vy: lateral velocity (body frame)
 
@@ -16,15 +17,23 @@ NX = 6;
 NY = 6;
 NU = 2;
 
-%reset start time
-train_data(:,1) = train_data(:,1) - train_data(1,1);
-
+% %reset start time
+% train_data(:,1) = train_data(:,1) - train_data(1,1);
+% 
 % %trim data (remove unnecessary parts with starting point (s) and end point (s)
 %     sp = 10; % starting skip (s)
 %     ep = 20; % end skip (s)
 %     isp = find(train_data(:,1) * 1e-6 > sp, 1);
 %     iep = find(train_data(:,1) > train_data(end,1) - ep * 1e6, 1);
 %     train_data = train_data(isp:iep, :);
+
+refer_idx = find(abs(train_data(:, 16)-0.5) >= reference_motor, 1);
+reference_time = train_data(refer_idx, 1); % test_data(1, 1)
+train_data(:, 1) = train_data(:, 1)-reference_time; % reset start time
+%trim data (remove unnecessary parts with starting point (s) and end point (s)
+    isp = refer_idx ;
+    iep = find(abs(train_data(:, 16)-0.5) >= reference_motor,1,'last');
+    train_data = train_data(isp:iep, :);
     
 raw_timestamps = train_data(:,1) * 1e-6;    %(s)    time vector
 raw_states = train_data(:,2:13);            % array of state vector: 12 states
@@ -139,10 +148,12 @@ dx = zeros(NX,N);
 y = zeros(NY,N);
 u = motors;
 err = zeros(NX, N);
+all_terms_dx5 = zeros(4, N);
 
 for n=1:N-1
     dt = t(n+1) - t(n);
-    [dx(:,n),y(:,n)] = rover_m(t(n), x(:,n), u(:,n), m,a,b,Cx,Cy,CA);
+    [dx(:,n),y(:,n), terms] = rover_m(t(n), x(:,n), u(:,n), m,a,b,Cx,Cy,CA);
+    all_terms_dx5(:, n+1) = terms';
     x(:,n+1) = x(:,n) + dx(:,n) * dt; 
     x(3,n+1) = wrapToPi(x(3,n+1)); % to [-pi, pi]
     
@@ -159,12 +170,19 @@ for n=1:N-1
     end
     
     % sycn all states in the begining 2s
-    if n * dt < 10
+    if n * dt < 2
           x([1:3, 6], n+1) = states([1:3, 6], n+1);
           ef2bf_m = [cos(x(3, n+1)), sin(x(3, n+1));
                     -sin(x(3, n+1)), cos(x(3, n+1))];
           x(4:5, n+1) = ef2bf_m * states(4:5, n+1);
     end
+    
+    % only sycn state 3,6
+%     x([3, 6], n+1) = states([3, 6], n+1);
+%     ef2bf_m = [cos(x(3, n+1)), sin(x(3, n+1));
+%             -sin(x(3, n+1)), cos(x(3, n+1))];
+%     temp = ef2bf_m * states(4:5, n+1);
+%     x(5, n+1) = temp(2); 
     
 %     k-step ahead estiamtion (sync at every-k loop)
 %     k = desiredFs;
@@ -178,15 +196,23 @@ for n=1:N-1
     err(:, n) = abs(y(:, n) - states(:, n));
 end
 
+%for last y
+[dx(:,N),y(:,N)] = rover_m(t(N), x(:,N), u(:,N), m,a,b,Cx,Cy,CA);
+
+
 % err_mean = mean(err, 2);
 % err_max = max(err, [], 2);
 % err_quants = quantile(err', [0.25, 0.75])';
 % err_thresh = err_quants(:, 2) + 1.5 * (err_quants(:, 2)-err_quants(:, 1));
 
+d_states = (states(4:6, 2:end) - states(4:6, 1:end-1))./ (timestamps(2:end) - timestamps(1:end-1));
+d_y = (y(4:6, 2:end) - y(4:6, 1:end-1))./ (timestamps(2:end) - timestamps(1:end-1));
+
+
 figure;
 for n=1:NY
     if NY > 1
-        subplot(NY/3, 3, n);
+        subplot(3, 3, n);
     end
     yyaxis left
     plot(timestamps, states(n,:),'r.-');
@@ -197,9 +223,52 @@ for n=1:NY
 %     plot(t, err_mean(n, 1)*ones(1, length(t)), 'g');
 %     plot(t, err_max(n, 1)*ones(1, length(t)), 'r');
 %     plot(t, err_thresh(n, 1)*ones(1, length(t)), 'b');
-    legend('State', 'Model', 'Error', 'Mean\_err', 'Max\_err', 'Thresh\_err');
+    legend('State', 'Model');
     title(title_name(n));
 end
+
+for i=1:3
+    subplot(3,3,i+6);
+    yyaxis left
+    plot(timestamps(1:end-1), d_states(i, :), 'r.-');
+    hold on;
+    plot(timestamps(1:end-1), d_y(i, :), 'b-');
+    legend('State', 'Model');
+end
+
+figure;
+for n=1:6
+    subplot(3, 3, n);
+    plot(timestamps, x(n,:),'r.-');
+    hold on;
+%     plot(t, x(n,:), 'b-');  
+    legend('body State');
+end
+
+for i=1:3
+    subplot(3,3,i+6);
+    plot(timestamps, dx(i+3,:),'r.-');
+    hold on;
+%     plot(t, x(n,:), 'b-');  
+    legend('body State');
+end
+
+figure;
+for i=1:2
+    subplot(1,2,i);
+    plot(timestamps, motors(i,:));
+    ylim([-0.5, 0.5]);
+    legend('motor');
+end
+
+figure;
+
+for i=1:4
+    subplot(1,4,i);
+    plot(timestamps, all_terms_dx5(i,:));
+end
+
+
 % figure;
 %     plot(timestamps, states(1,:),'r.-');
 %     hold on;
