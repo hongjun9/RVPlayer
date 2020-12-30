@@ -75,10 +75,12 @@ function animate(data, model, plots)
         
         num = 30;
         if t > num
-            plot3(data.x(1,t-num:t), data.x(2,t-num:t), data.x(3,t-num:t), 'r-', 'LineWidth',2);
+%             plot3(data.x(1,t-num:t), data.x(2,t-num:t), data.x(3,t-num:t), 'r-', 'LineWidth',1);
+            plot3(data.x(1,1:t), data.x(2,1:t), data.x(3,1:t), 'r-', 'LineWidth',1);
         end
 %         plot3(data.x(1,t-num:t), data.x(2,t-num:t), data.x(3,t-num:t), 'r-');
 
+        %==========================================
         % Update the drawing. (dynamic axis)     
         if data.x(1,t) > 0
             xmin = -3;
@@ -99,9 +101,10 @@ function animate(data, model, plots)
         zmax = data.x(3,t)+5;
         
         %fixed xyz axis
-        xmin = -35; xmax = 35;
-        ymin = -35; ymax = 35;
-        zmin = 0; zmax = 6;
+        xmin = -5; xmax = 5;
+        ymin = -5; ymax = 5;
+        zmin = 3; zmax = 6;
+        %==========================================
         
         axis([xmin xmax ymin ymax zmin zmax]);
 %         drawnow limitrate
