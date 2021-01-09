@@ -11,7 +11,8 @@ function h = visualize(data)
 
     % Create the quadcopter object. Returns a handle to
     % the quadcopter itself as well as the thrust-display cylinders.
-    [t] = quadcopter;
+%     [t] = quadcopter;
+    [t] = rover;
 
     % Set axis scale and labels.
     axis([-3 3 -3 3 0 5]);
@@ -101,8 +102,8 @@ function animate(data, model, plots)
         zmax = data.x(3,t)+5;
         
         %fixed xyz axis
-        xmin = -5; xmax = 5;
-        ymin = -5; ymax = 5;
+        xmin = -3; xmax = 3;
+        ymin = -3; ymax = 3;
         zmin = 3; zmax = 6;
         %==========================================
         
@@ -162,6 +163,83 @@ function multiplot(data, values, ind)
         ymax = 1;
     end
     axis([xmin xmax ymin ymax]);
+end
+
+function [h] = rover()
+
+    a = 1;      %upper
+    b = 1;      %lower 
+    B = 0.6;      %width
+    w = B/2;    %half width
+    l = 1;      %height
+    p1 = [-w, -b, 0];
+    p2 = [w, -b, 0];
+    p3 = [w, a, 0];
+    p4 = [-w, a, 0];
+    p5 = [-w, -b, l];
+    p6 = [w, -b, l];
+    p7 = [w, a, l];
+    p8 = [-w, a, l];
+    
+    p1 = [-b, -w, 0];
+    p2 = [b, -w, 0];
+    p3 = [a, w, 0];
+    p4 = [-a, w, 0];
+    p5 = [-b, -w, l];
+    p6 = [b, -w, l];
+    p7 = [a, w, l];
+    p8 = [-a, w, l];
+    
+    x = [p1(1) p2(1) p3(1) p4(1)];
+    y = [p1(2) p2(2) p3(2) p4(2)];
+    z = [p1(3) p2(3) p3(3) p4(3)];
+    h(1) = fill3(x,y,z,1);hold on;
+    
+    x = [p5(1) p6(1) p7(1) p8(1)];
+    y = [p5(2) p6(2) p7(2) p8(2)];
+    z = [p5(3) p6(3) p7(3) p8(3)];
+    h(2) = fill3(x, y, z, 2);hold on; 
+    
+    x = [p2(1) p6(1) p7(1) p3(1)];
+    y = [p2(2) p6(2) p7(2) p3(2)];
+    z = [p2(3) p6(3) p7(3) p3(3)];
+    h(3) = fill3(x, y, z, 3);hold on; 
+ 
+
+    x = [p1(1) p5(1) p8(1) p4(1)];
+    y = [p1(2) p5(2) p8(2) p4(2)];
+    z = [p1(3) p5(3) p8(3) p4(3)];
+    h(4) = fill3(x, y, z, 4);hold on; 
+    
+    x = [p1(1) p2(1) p6(1) p5(1)];
+    y = [p1(2) p2(2) p6(2) p5(2)];
+    z = [p1(3) p2(3) p6(3) p5(3)];
+    h(5) = fill3(x, y, z, 5);hold on; 
+    
+    x = [p4(1) p3(1) p7(1) p8(1)];
+    y = [p4(2) p3(2) p7(2) p8(2)];
+    z = [p4(3) p3(3) p7(3) p8(3)];
+    h(6) = fill3(x, y, z, 6);hold on; 
+
+    set(h,'FaceAlpha',0.3) ;
+       
+    
+    radius_rotor = l*0.4;
+    [x y z] = sphere;
+    x = radius_rotor * x;
+    y = y*0.2;
+    z = radius_rotor * z;
+    h(7) = surf(x + a*0.7, y + w, z+l/2, 'EdgeColor', 'none', 'FaceColor', 'b');
+    h(8) = surf(x - b*0.7, y - w, z+l/2, 'EdgeColor', 'none', 'FaceColor', 'k');
+    h(9) = surf(x + a*0.7, y - w, z+l/2, 'EdgeColor', 'none', 'FaceColor', 'b');
+    h(10) = surf(x - b*0.7, y + w, z+l/2, 'EdgeColor', 'none', 'FaceColor', 'k');
+    alpha(h(5:8),.3)
+    
+    
+    
+    t = hgtransform;
+    set(h, 'Parent', t);
+    h = t;
 end
 
 % Draw a quadcopter. Return a handle to the quadcopter object
