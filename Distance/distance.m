@@ -41,6 +41,6 @@ for i=1:8
     diff2 = abs(v{i}(1:21000) - R(1:21000));
 %     yyaxis right; area(diff);ylim([0,3000]);
     yyaxis right; area(diff2);
-    title(strcat(title_name(i), ": ", num2str(mean(diff)), ", ", num2str(mean(diff2))));
+    title(strcat(title_name(i), ": ", num2str(mean(diff2)), ", ", num2str(1/mean(diff2))));
 end
 
