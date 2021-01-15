@@ -32,13 +32,15 @@ else
     load disturb_L_norm.mat
 end
 
+% L_norm = [0,0];
+
 reference_motor = 0.3; % 1300 pwm
 %%%%%
 
 
 
 %% Read test data
-filename = 'Test3/00000294.csv';
+filename = 'Test3/00000435.csv';
 test_data = csvread(filename, 2, 0);
 refer_idx = find(test_data(:, 14) >= reference_motor, 1);
 reference_time = test_data(refer_idx, 1); % test_data(1, 1)
@@ -110,7 +112,8 @@ global frame_height;
 frame_height = 0.1;
 for n=1:N-1
     dt = t(n+1) - t(n);
-    [dx(:,n),y(1:NX,n)] = quadrotor_m(t(n), x(:,n), u(:,n), a,b,c,d, m, I_x, I_y, I_z, K_T, K_Q);
+%     [dx(:,n),y(1:NX,n)] = quadrotor_m(t(n), x(:,n), u(:,n), a,b,c,d, m, I_x, I_y, I_z, K_T, K_Q);
+    [dx(:,n),~] = quadrotor_m(t(n), x(:,n), u(:,n), a,b,c,d, m, I_x, I_y, I_z, K_T, K_Q);
     y_accel(:, n) = dx(7:12, n); % record y_accel.
     disturb_accel = accel_states(:, n) - y_accel(:, n);
     origin_disturb(:, n+1) = [time_us(n+1); disturb_accel];
@@ -134,6 +137,7 @@ for n=1:N-1
 
     x(:,n+1) = x(:,n) + dx(:,n) * dt; 
     x(6,n+1) = mod(x(6,n+1), 2*pi); % wrap yaw to [0,2pi)
+    y(:,n+1) = x(:, n+1);
     
     %========= on ground check ==========
     if on_ground(x(3, n+1), frame_height)
@@ -217,13 +221,13 @@ for n=1:2
     plot (t, actual_log_freqs(n, :));
 end
 
-return;
+% return;
 
 
 %% write data
 
 sync_log_k = max_freq;
-sync_data = test_data(1:sync_log_k:end, 1:13); % NED frame
+sync_data = test_data(1:sync_log_k/10:end, 1:13); % NED frame
 T_syn = array2table(sync_data);
 T_syn.Properties.VariableNames(1:13) = {'Time_us','x','y', 'z', 'roll', 'pitch', 'yaw',...
     'V_x', 'V_y', 'V_z', 'Gyro_x', 'Gyro_y', 'Gyro_z'};
@@ -240,23 +244,25 @@ full_disturb(:, 2) = full_disturb(:, 3); %x
 full_disturb(:, 3) = temp; %y
 %=====================================
 
-T_disturb_lin = array2table(full_disturb(logical(accel_log_record(1, :)'), [1, 2:4]));
-T_disturb_rot = array2table(full_disturb(logical(accel_log_record(2, :)'), [1, 5:7]));
+% add three colums as positions in full_disturb
+full_disturb = [full_disturb states(1:3, :)'];
 
-T_disturb_lin.Properties.VariableNames(1:4) = {'Time_us','accel_x','accel_y', 'accel_z'};
-T_disturb_rot.Properties.VariableNames(1:4) = {'Time_us','angl_accel_x', 'angl_accel_y', 'angl_accel_z'};
+T_disturb_lin = array2table(full_disturb(logical(accel_log_record(1, :)'), [1, 2:4, 8:10]));
+T_disturb_rot = array2table(full_disturb(logical(accel_log_record(2, :)'), [1, 5:7, 8:10]));
+
+T_disturb_lin.Properties.VariableNames(1:7) = {'Time_us','accel_x','accel_y', 'accel_z', 'pos_x', 'pos_y', 'pos_z'};
+T_disturb_rot.Properties.VariableNames(1:7) = {'Time_us','angl_accel_x', 'angl_accel_y', 'angl_accel_z', 'pos_x', 'pos_y', 'pos_z'};
 
 writetable(T_disturb_lin,[filename(1: end-4) '_disturb_lin.csv']);
 writetable(T_disturb_rot,[filename(1: end-4) '_disturb_rot.csv']);
-
 %% Statistical calculation
 kbps2gbpd = 0.0864;
 main_data_rate = 117 * max_freq / 1000; %kb/s
 other_data_rate = 14.583; %kb/s
 all_data_rate = main_data_rate + other_data_rate
-logged_data_size =4*(sum(sum(accel_log_record)) * 3 + size(sync_data, 1) * (2 + 12)); %Bytes
+logged_data_size =4*(sum(sum(accel_log_record)) * 3 + size(sync_data, 1)/10 * (2 + 12)); %Bytes
 total_time = N / max_freq; %s
 processed_data_rate = logged_data_size / total_time  / 1000 %kb/s
 final_data_rate = processed_data_rate + other_data_rate
 compression_rate = final_data_rate / all_data_rate
-
+main_data_compression_rate = processed_data_rate / main_data_rate

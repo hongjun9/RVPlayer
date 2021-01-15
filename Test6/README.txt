@@ -27,3 +27,6 @@ APMRover2 SITL Rover
 
 133: simple mission, straight north, with wind speed 0
 134: strong effect, straight north, with wind speed 14
+
+152: Zig-Zag mission, random disturbance
+153: StarSix Mission, random disturbance

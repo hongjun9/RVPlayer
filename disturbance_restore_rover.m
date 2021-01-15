@@ -34,7 +34,7 @@ else
     load disturb_L_norm_rover.mat
 end
 
-% L_norm = [0.2,0.03];
+L_norm = [4,2]; % for 152 and 153
 
 reference_motor = 0.04; % 1500 +- 40 pwm
 %%%%%
@@ -42,7 +42,7 @@ reference_motor = 0.04; % 1500 +- 40 pwm
 
 
 %% Read test data
-filename = 'Test6/00000134.csv';
+filename = 'Test6/00000153.csv';
 test_data = csvread(filename, 2, 0);
 refer_idx = find(abs(test_data(:, 16)-0.5) >= reference_motor, 1);
 reference_time = test_data(refer_idx, 1); % test_data(1, 1)

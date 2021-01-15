@@ -57,7 +57,7 @@ reference_motor = 0.02; % 1500 +- 40 pwm
 
 %% Read test data
 % 267, 266, 264, 265, 269
-filename = '../Test8/00000269.csv';
+filename = '../Test8/00000286.csv';
 test_data = csvread(filename, 2, 0);
 refer_idx = find(abs(test_data(:, 16)-0.5) >= reference_motor, 1);
 reference_steering = test_data(find(abs(test_data(:, 14))>0.5,1), 14) - 0.5;

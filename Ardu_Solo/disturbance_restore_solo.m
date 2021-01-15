@@ -59,13 +59,13 @@ reference_motor = 0.3; % 1300 pwm
 
 
 %% Read test data
-filename = '../Test5/157.csv';
+filename = '../Test5/219.csv';
 test_data = csvread(filename, 2, 0);
 refer_idx = find(test_data(:, 14) >= reference_motor, 1);
 reference_time = test_data(refer_idx, 1); % test_data(1, 1)
 test_data(:, 1) = test_data(:, 1)-reference_time; % reset start time
 %trim data (remove unnecessary parts)
-    isp = refer_idx + 3 * max_freq;
+    isp = refer_idx; %+ 3 * max_freq;
     iep = find(test_data(:, 14) >= reference_motor,1,'last') - 2 * max_freq;
 %     isp = refer_idx + 4 * max_freq;
 %     iep = refer_idx + 14 * max_freq;
@@ -121,7 +121,10 @@ title_name = ["x(east)", "y(north)", "z(up)", "roll", "pitch", "yaw", "vx", "vy"
 % t, x, y, u
 t = timestamps;
 x = zeros(NX,N);    x(1:12,1) = states(:,1);    
-y = zeros(NY,N);    %model output
+y = zeros(NY,N);    y(:,1) = x(:, 1);%model output
+
+atk_pos_diff = zeros(3, N);
+
 y_accel = zeros(6, N);
 u = motors;
 dx = zeros(NX,N);
@@ -133,7 +136,8 @@ global frame_height;
 frame_height = 0.1;
 for n=1:N-1
     dt = t(n+1) - t(n);
-    [dx(:,n),y(1:NX,n)] = quadrotor_m_solo(t(n), x(:,n), u(:,n), a,b,c,d, m, I_x, I_y, I_z, K_T, K_Q);
+%     [dx(:,n),y(1:NX,n)] = quadrotor_m_solo(t(n), x(:,n), u(:,n), a,b,c,d, m, I_x, I_y, I_z, K_T, K_Q);
+    [dx(:,n),~] = quadrotor_m_solo(t(n), x(:,n), u(:,n), a,b,c,d, m, I_x, I_y, I_z, K_T, K_Q);
     y_accel(:, n) = dx(7:12, n); % record y_accel.
     disturb_accel = accel_states(:, n) - y_accel(:, n);
     origin_disturb(:, n+1) = [time_us(n+1); disturb_accel];
@@ -159,6 +163,8 @@ for n=1:N-1
     x(:,n+1) = x(:,n) + dx(:,n) * dt; 
     x(6,n+1) = mod(x(6,n+1), 2*pi); % wrap yaw to [0,2pi)
     
+    y(:,n+1) = x(:, n+1);
+    
     %========= on ground check ==========
     if on_ground(x(3, n+1), frame_height)
         x(3, n+1) = frame_height; % z ;
@@ -176,6 +182,12 @@ for n=1:N-1
     
     %k-step ahead estiamtion (sync at every-k loop)
     if mod(n, sync_k) == 0
+        last_v_diff_m = states(7:9, n) - x(7:9, n);
+        curr_pos_diff_m = last_v_diff_m * dt;
+        real_pos_diff = states(1:3, n+1) - x(1:3, n+1);
+        atk_pos_diff(:, n+1) = real_pos_diff - curr_pos_diff_m;
+        
+        % sync states
         x(:,n+1) = states(:,n+1);
     end
 end
@@ -187,6 +199,7 @@ if is_lowpass
 else
     full_disturb =  origin_disturb';
 end
+
 line_acc_norm = vecnorm(full_disturb(: , 2:4)');
 rot_acc_norm = vecnorm(full_disturb(:, 5:7)');
 acc_norms = [line_acc_norm; rot_acc_norm]';
@@ -214,8 +227,18 @@ for n=1:NY
     plot(t, y(n,:), 'b--');                  %model prediction
     hold on;
     yyaxis right
-    area(t, abs(states(n,:)-y(n,:)), 'FaceAlpha', 0.8, 'EdgeColor', 'none');    % deviation
+    area(t, (states(n,:)-y(n,:)), 'FaceAlpha', 0.8, 'EdgeColor', 'none');    % deviation
     legend('State', 'Model prediction',  'Error');
+end
+
+figure;
+
+for i = 1:3
+    subplot(1,3,i);
+    area(timestamps(1:2:end), (states(i,1:2:end)-y(i,1:2:end)), 'FaceAlpha', 0.8, 'EdgeColor', 'none');
+    hold on;
+    area(timestamps(1:2:end), atk_pos_diff(i, 1:2:end), 'FaceAlpha', 0.8, 'EdgeColor', 'none');
+    legend('State Diff', 'Atk Pos Diff');
 end
 
 
@@ -230,7 +253,7 @@ for n=1:6
     plot(t, y_accel(n,:), 'b--');                  %model prediction
     hold on;
     yyaxis right
-    area(t, abs(accel_states(n,:)-y_accel(n,:)), 'FaceAlpha', 0.8, 'EdgeColor', 'none');    % deviation
+    area(t, accel_states(n,:)-y_accel(n,:), 'FaceAlpha', 0.8, 'EdgeColor', 'none');    % deviation
     legend('State', 'Model prediction',  'Error');
 end
 
@@ -270,11 +293,14 @@ full_disturb(:, 2) = full_disturb(:, 3); %x
 full_disturb(:, 3) = temp; %y
 %=====================================
 
-T_disturb_lin = array2table(full_disturb(logical(accel_log_record(1, :)'), [1, 2:4]));
-T_disturb_rot = array2table(full_disturb(logical(accel_log_record(2, :)'), [1, 5:7]));
+% add three colums as positions in full_disturb
+full_disturb = [full_disturb states(1:3, :)'];
 
-T_disturb_lin.Properties.VariableNames(1:4) = {'Time_us','accel_x','accel_y', 'accel_z'};
-T_disturb_rot.Properties.VariableNames(1:4) = {'Time_us','angl_accel_x', 'angl_accel_y', 'angl_accel_z'};
+T_disturb_lin = array2table(full_disturb(logical(accel_log_record(1, :)'), [1, 2:4, 8:10]));
+T_disturb_rot = array2table(full_disturb(logical(accel_log_record(2, :)'), [1, 5:7, 8:10]));
+
+T_disturb_lin.Properties.VariableNames(1:7) = {'Time_us','accel_x','accel_y', 'accel_z', 'pos_x', 'pos_y', 'pos_z'};
+T_disturb_rot.Properties.VariableNames(1:7) = {'Time_us','angl_accel_x', 'angl_accel_y', 'angl_accel_z', 'pos_x', 'pos_y', 'pos_z'};
 
 writetable(T_disturb_lin,[filename(1: end-4) '_disturb_lin.csv']);
 writetable(T_disturb_rot,[filename(1: end-4) '_disturb_rot.csv']);

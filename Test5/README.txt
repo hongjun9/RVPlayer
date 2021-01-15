@@ -51,3 +51,43 @@ https://www.notion.so/bobcheng/Real-Attack-Test-83db042416e2447ca8fe12e464faeaef
 190,191, 192: complex square rp0
 193, 194: complex square rp1
 195: complex square rp2
+
+
+========what-if reasoning=============
+- 221 — Task 1-1
+- 222 — Task 1-2
+- 223 — Task 1-3
+- 224 — Task 1-4
+- 225 — Task 1-5
+---
+- 226 — Task 2-1
+- 227 — Task 2-2
+- 228 — Task 2-3
+- 229 — Task 2-4
+- 230 — Task 2-5
+---
+- 231 —  Task 3-1
+- 232 — Task 3-2
+- 233 — Task 3-3
+- 234 — Task 3-4
+- 235 — Task 3-5
+---
+- 236 — Task 4-1
+- 237 — Task 4-2
+- 238 — Task 4-3
+---
+- 239 — Task 5-1
+- 241 — Task 5-2
+- 242 — Task 5-3
+- 243 — Task 5-4
+- 244 — Task 5-5
+---
+- 245 — Task 8-1
+- 246 — Task 8-2 fall safe
+---
+- 247 — Task 6-1
+- 248 — Task 6-2
+- 252 — Task 6-3
+---
+- 249 — Task 7-1
+- 251 — Task 7-2

@@ -37,3 +37,7 @@ https://www.notion.so/bobcheng/Drone-Dynamic-Data-ac40c247bdb94e3680b487a2919866
 291: GPS stealthy attack trace, attack on within trace at around 20s
 293：Inter-sample attack. no attack. reference.
 294:  Inter-sample attack. attack launched
+
+430: simQuad, StarSix mission, random disturbance (bad)
+431: simQuad, StarSix mission, random disturbance 
+435: simQuad, Zig-Zag mission, random disturbance 
