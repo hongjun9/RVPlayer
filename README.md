@@ -27,7 +27,7 @@ This provides a prototype of our tool and data set to play, including system ide
 
 * dataset
 * system_id
-* targets - adaptive logging, replayer  
+* rvplayer - targets, adaptive logging, replayer  
 
 ## Dataset
 
