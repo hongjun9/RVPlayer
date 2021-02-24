@@ -25,7 +25,9 @@ This provides a prototype of our tool and data set to play, including system ide
 
 ## Directory Structure
 
-* 
+* dataset
+* system_id
+* targets
 
 ## Dataset
 
