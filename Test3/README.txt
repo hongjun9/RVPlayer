@@ -74,4 +74,17 @@ https://www.notion.so/bobcheng/Drone-Dynamic-Data-ac40c247bdb94e3680b487a2919866
 597: gyro gradual attack scale: 0.01
 598: gyro gradual attack scale: 0.02
 
-613: data with raw_acc
+631: data with raw_acc
+632: GPS spoofing with GPS speed spoofing
+633: square mission to test IMU-replay
+
+
+634: GPS spoofing plan without attack
+635: GPS spoofing plan with attack, start at 20s, scale: 2
+638: GPS spoofing plan with attack, start at 20s, scale: 2, with GSP data
+
+639: GPS spoofing plan without attack, diagnal plan
+640: GPS spoofing plan with attack, start at 20s, scale: 2, diagnal plan
+
+639: GPS spoofing plan without attack, square plan
+640: GPS spoofing plan with attack, start at 20s, scale: 2, square plan
