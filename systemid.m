@@ -1,6 +1,6 @@
 clear;
 close all;
-filename = 'Test3/00000190.csv';
+filename = 'Test3/55.csv';
 train_data = csvread(filename, 2, 0);  
 % states [x y z roll pitch yaw vx vy vz p q r]
 % output = states
@@ -143,17 +143,17 @@ for n=1:N-1
         end
     end
 
-    % sychronize for the first 10 seconds
-%     if n * dt < 10
-%         x(10:12,n+1) = states(10:12,n+1);
-%         x(4:6,n+1) = states(4:6,n+1);
-%     end
+%     sychronize for the first 10 seconds
+    if n * dt < 10
+        x(10:12,n+1) = states(10:12,n+1);
+        x(4:6,n+1) = states(4:6,n+1);
+    end
     
     %k-step ahead estiamtion (sync at every-k loop)
-    k = desiredFs;
-    if mod(n, k) == 0
-        x(:,n+1) = states(:,n+1);
-    end
+%     k = 3 * desiredFs;
+%     if mod(n, k) == 0
+%         x(:,n+1) = states(:,n+1);
+%     end
     
     err(:, n) = abs(y(:, n) - states(:, n));
 end
@@ -173,10 +173,11 @@ for n=1:NY
     plot(t, y(n,:), 'b-');  
     yyaxis right
     area(t, err(n, :), 'FaceAlpha', 0.8, 'EdgeColor', 'none');
-    plot(t, err_mean(n, 1)*ones(1, length(t)), 'g');
-    plot(t, err_max(n, 1)*ones(1, length(t)), 'r');
-    plot(t, err_thresh(n, 1)*ones(1, length(t)), 'b');
-    legend('Resampled', 'Model', 'Error', 'Mean\_err', 'Max\_err', 'Thresh\_err');
+    legend('Resampled', 'Model', 'Error');
+%     plot(t, err_mean(n, 1)*ones(1, length(t)), 'g');
+%     plot(t, err_max(n, 1)*ones(1, length(t)), 'r');
+%     plot(t, err_thresh(n, 1)*ones(1, length(t)), 'b');
+%     legend('Resampled', 'Model', 'Error', 'Mean\_err', 'Max\_err', 'Thresh\_err');
     title(title_name(n));
 end
 

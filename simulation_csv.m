@@ -8,8 +8,54 @@ close all;
 % 
 % load('sample_data.mat');
 
-test_data = csvread('Test5_rerun/00000375.csv', 1, 0);
-max_freq = 400;
+% % parameter attack case replay simulation
+% frame='drone';
+% test_data = csvread('Test5_rerun/00000375.csv', 1, 0); %parameter attack
+% view_angle = [30, 25];
+
+% % physical attack case replay simulation
+% frame='drone';
+% test_data = csvread('Test5_rerun/00000349.csv', 1, 0); 
+
+% % gps attack case replay simulation
+frame='drone';
+test_data = csvread('Test5_rerun/00000382.csv', 1, 0); 
+view_angle = [30, 40];
+% xmin = -15; xmax = 15;
+% ymin = -1; ymax = 30;
+% zmin = -1; zmax = 6;
+
+% % split second attack case replay simulation
+% frame='drone';
+% test_data = csvread('Test5_rerun/00000352.csv', 1, 0);
+% view_angle = [145, 25];
+
+
+% % rover resisence case replay simulation
+% frame = 'rover';
+% test_data = csvread('Test8_rerun/157.csv', 1, 0);
+% view_angle = [-90, 90];
+% xmin = -1; xmax = 25;
+% ymin = -10; ymax = 10;
+% zmin = -1; zmax = 6;
+% test_data = csvread('Test8/00000264.csv', 1, 0); % original trace
+
+
+% combine = test_data;
+% combine(:, 7)= combine(:, 7) + deg2rad(15);
+% T = array2table(combine);
+% T.Properties.VariableNames(1:17) = {'Time_us','x','y', 'z', 'roll', 'pitch', 'yaw',...
+%     'V_x', 'V_y', 'V_z', 'Gyro_x', 'Gyro_y', 'Gyro_z', 'M1', 'M2', 'M3', 'M4'};
+% 
+% writetable(T,['Test8_rerun/157.csv']);
+
+
+if strcmp(frame, 'rover')
+    max_freq = 50;
+else
+    max_freq = 400;
+end
+
 
 % test_data = csvread('Test5/189.csv', 1, 0);
 % max_freq = 100;
@@ -67,11 +113,13 @@ motors = raw_motors';
 Ts = 1/max_freq;
 pos = states(1:3,:);
 ang = states(4:6,:);
+ang(3, :) = ang(3, :);
 vel = states(7:9,:);
 angvel = states(10:12,:);
 time = timestamps;
 
-struct_data =  struct('x', pos, 'theta', ang, 'vel', vel, 'angvel', angvel, 't', time, 'dt', Ts);
+struct_data =  struct('x', pos, 'theta', ang, 'vel', vel, 'angvel', angvel, 't', ...
+    time, 'dt', Ts, 'frame', frame, 'viewAngle', view_angle);
 %3D-animation
 %Note: adjust a scale of xyz axises for a better look in animate() of visualize.m
 visualize(struct_data);

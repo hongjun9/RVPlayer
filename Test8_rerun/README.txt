@@ -8,7 +8,9 @@
 145: 282 reproduce, zigzig_v2 rerun, no disturbance
 146: 282 reproduce, zigzig_v2 rerun, with disturbance 
 
-148: 284 reproduce, zigzig_v2 rerun, with disturbance 
-149: 284 reproduce, zigzig_v2 rerun, no disturbance
+148: 284 reproduce, star6_v2 rerun, with disturbance 
+149: 284 reproduce, star6_v2 rerun, no disturbance
 
 151: 286 reproduce, square_v2, rerun, with disturbance
+157: 264 rerun, with x, yaw disturbance and sync 10Hz
+158: 265 rerun, with x, yaw disturbance and sync 10Hz

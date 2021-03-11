@@ -46,7 +46,7 @@ raw_motors = train_data(:,14:17);
 raw_N = size(train_data,1);                 % size of samples
 
 %%%Preprocessing ================================
-
+% Rover use NED frame in model
 
 % extract 6 states  [x y yaw vx vy r]
 raw_states(:,1) = raw_states(:,1);

@@ -46,6 +46,14 @@
 
 382: 163 reproduce, sync 3 states at 1 Hz. GPS attack case study.
 383: 163 reproduce, sync 6 states at 2 Hz (1Hz doesn't work). GPS attack case study.
+451: 163 reproduce, baseline without sync and disturbance
+457: 163 reproduce, with disturbance but without sync.
+535: 163 reproduce, with disturbance but without sync.
+536: 163 reproduce, replace euler, from 0s
+537: 163 reproduce, replace euler, from 5s
+538: 163 reproduce, replace gyro, from 5s
+
+
 
 ==========what if reasoning =================
 399: 245 reproduce, task 8
@@ -61,3 +69,29 @@
 437: 217 reproduce baseline, zig-zag trace
 438: 219 reproduce baseline, StarSix trace
 439: 155-157 small, medium, strong effect reference. small: 8-15s; medium: 20-30; strong: 14-19s;
+453: split-second attack simulation, origin model and no disturbance
+
+
+============E_max tests==============
+467: 190 reproduce, no sync, 1 * E_m
+468: 190 reproduce, sync 3s, 1 * E_m
+469: 190 reproduce, sync 2s, 1 * E_m
+470: 190 reproduce, sync 1s, 1 * E_m
+471: 190 reproduce, sync 1s, 0.25 * E_m
+472: 190 reproduce, sync 1s, 0.5 * E_m
+473: 190 reproduce, sync 1s, 2 * E_m
+474: 190 reproduce, sync 1s, 4 * E_m
+475: 190 reproduce, sync 1s, 0.25 * E_m, only skip 1s
+476: 190 reproduce, sync 1s, 3 * E_m
+
+478: 190 reproduce, sync 1s, 0.125 * E_m, Threshold based
+479: 190 reproduce, sync 1s, 0.25 * E_m, Threshold based
+480: 190 reproduce, sync 1s, 0.5 * E_m, Threshold based
+481: 190 reproduce, sync 1s, 0.75 * E_m, Threshold based
+482: 190 reproduce, sync 1s, 1 * E_m, Threshold based
+
+524: 159 reproduce, split-second attack on gyroscope, replace euler angles, start from 20s
+525: 159 reproduce, split-second attack on gyroscope, replace angular speed, start from 20s
+526: 159 reproduce, split-second attack on gyroscope, use disturbance but without sync
+
+615: 159 reproduce, split-second attack on gyroscope, use disturbance sync position from 24s

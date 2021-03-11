@@ -4,15 +4,20 @@ function h = visualize(data)
     % Create a figure with three parts. One part is for a 3D visualization,
     % and the other two are for running graphs of angular velocity and displacement.
 %     figure; plots = [subplot(4, 2, 1:4), subplot(4, 2, 5), subplot(4, 2, 6), subplot(4, 2, 7), subplot(4, 2, 8)];
-    figure; plots = [subplot(3, 2, 1:4), subplot(3, 2, 5), subplot(3, 2, 6)];
+%     figure; plots = [subplot(3, 2, 1:4), subplot(3, 2, 5), subplot(3, 2, 6)];
+figure; plots = [subplot(4, 2, 1:4), subplot(4, 2, 7), subplot(4, 2, 8)];
     subplot(plots(1));
     
     %pause;
 
     % Create the quadcopter object. Returns a handle to
     % the quadcopter itself as well as the thrust-display cylinders.
-%     [t] = quadcopter;
-    [t] = rover;
+    if strcmp(data.frame, 'rover')
+        [t] = rover;
+    else
+        [t] = quadcopter;
+    end
+    
 
     % Set axis scale and labels.
     axis([-3 3 -3 3 0 5]);
@@ -32,7 +37,7 @@ function animate(data, model, plots)
     % Show frames from the animation. However, in the interest of speed,
     % skip some frames to make the animation more visually appealing.
         
-    for t = 1:100:length(data.t)
+    for t = 1:floor((1/data.dt)/4):length(data.t)
         
         if data.x(3,t) < 0
             data.x(3,t) = 0;
@@ -41,7 +46,7 @@ function animate(data, model, plots)
         
         % The first, main part, is for the 3D visualization.
         subplot(plots(1));
-
+        view(data.viewAngle(1), data.viewAngle(2));
         % Compute translation to correct linear position coordinates.
         dx = data.x(:, t);
         move = makehgtform('translate', dx);
@@ -102,9 +107,9 @@ function animate(data, model, plots)
         zmax = data.x(3,t)+5;
         
         %fixed xyz axis
-        xmin = -3; xmax = 3;
-        ymin = -3; ymax = 3;
-        zmin = 3; zmax = 6;
+        xmin = -15; xmax = 15;
+        ymin = -1; ymax = 30;
+        zmin = -1; zmax = 6;
         %==========================================
         
         axis([xmin xmax ymin ymax zmin zmax]);

@@ -29,20 +29,20 @@ is_lowpass = 1;
 lowpass_w = 10;
 adaptive_order = 1;
 if is_lowpass
-    load disturb_L_norm_filtered_rover.mat
+    load disturb_L_norm_filtered_rover_v2.mat
 else
     load disturb_L_norm_rover.mat
 end
 
-L_norm = [4,2]; % for 152 and 153
-
+% L_norm = [4,2]; % for 152 and 153
+% L_norm = [0,0];
 reference_motor = 0.04; % 1500 +- 40 pwm
 %%%%%
 
 
 
 %% Read test data
-filename = 'Test6/00000153.csv';
+filename = 'Test6/00000122.csv';
 test_data = csvread(filename, 2, 0);
 refer_idx = find(abs(test_data(:, 16)-0.5) >= reference_motor, 1);
 reference_time = test_data(refer_idx, 1); % test_data(1, 1)
@@ -204,7 +204,7 @@ end
 
 % L_norm = [max(line_acc_norm), max(rot_acc_norm)]; % save norm
 % save('disturb_L_norm.mat', 'L_norm')
-% save('disturb_L_norm_filtered_rover.mat', 'L_norm')
+% save('disturb_L_norm_filtered_rover_v2.mat', 'L_norm')
 %% plot
 figure;
 for n=1:NY
@@ -293,6 +293,8 @@ writetable(T_syn,[filename(1: end-4) '_syn.csv']);
 % full_disturb(:, 2) = full_disturb(:, 3); %x
 % full_disturb(:, 3) = temp; %y
 % %=====================================
+% The logged data is in NED frame since there is no frame change in rover
+
 
 T_disturb_lin = array2table(full_disturb(logical(accel_log_record(1, :)'), [1, 2:3]));
 T_disturb_rot = array2table(full_disturb(logical(accel_log_record(2, :)'), [1, 4]));
@@ -316,3 +318,14 @@ processed_data_rate = logged_data_size / total_time  / 1000 * kbps2gbpd %gb/d
 main_data_compression_rate = processed_data_rate / main_data_rate
 
 
+%%
+disp('========= v2 logging rate =============');
+new_adaptive_rate = kbps2gbpd * 4*(sum(sum(accel_log_record)) * (1+1)) / total_time / 1000; %GB/s
+regular_Hz = 4;
+previous_regular_rate = kbps2gbpd * (2+6) * 4 /1000; %GB/s
+new_regular_rate = kbps2gbpd * regular_Hz * (1 + 2 + 2 + 1) * 4 / 1000; %GB/s
+disp(['previous regular rate: ' num2str(previous_regular_rate) 'GB/s, new regular rate: ' num2str(new_regular_rate) 'GB/s']);
+new_overall_logging_rate = new_adaptive_rate + new_regular_rate;
+new_compression_ratio = new_overall_logging_rate / (main_data_rate);
+disp(['v2 logging rate in GB/s: ' num2str(new_overall_logging_rate)]);
+disp(['v2 log compression ratio:' num2str(new_compression_ratio)]);
