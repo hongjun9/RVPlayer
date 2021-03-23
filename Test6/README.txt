@@ -30,3 +30,6 @@ APMRover2 SITL Rover
 
 152: Zig-Zag mission, random disturbance
 153: StarSix Mission, random disturbance
+
+162: GPS spoofing, straight mission, starts at 30s, ends at 60s, scale: 2
+163: 162 reference

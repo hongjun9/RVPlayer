@@ -6,10 +6,10 @@ close all;
 %states ["x(east)", "y(north)", "z(up)", "roll", "pitch", "yaw", "vx", "vy", "vz", "p", "q", "r"]; 
 %timestamps
 % 
-% load('sample_data.mat');
+load('sample_data.mat');
 %% Split-second attack 
 % load('CaseStudies/159.mat');      % original
-load('CaseStudies/00000352.mat'); % reproduced
+% load('CaseStudies/00000352.mat'); % reproduced
 
 
 

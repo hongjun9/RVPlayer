@@ -42,6 +42,7 @@ sync_k = 1; %max_freq*10;
 is_lowpass = 1;
 lowpass_w = 10;
 adaptive_order = 1;
+thresh_based = 0;
 
 % L_norm = [0, 0];
 
@@ -50,7 +51,8 @@ if is_lowpass
 else
     load disturb_L_norm.mat
 end
-
+E_max_coeff = 1;
+L_norm = L_norm * E_max_coeff;
 
 
 reference_motor = 0.3; % 1300 pwm
@@ -59,7 +61,12 @@ reference_motor = 0.3; % 1300 pwm
 
 
 %% Read test data
-filename = '../Test5/219.csv';
+filename = '../Test5/163.csv';
+% if thresh_based == 1
+%     filename = ['../Test5/Thr' num2str(E_max_coeff) '/190.csv'];
+% end
+
+
 test_data = csvread(filename, 2, 0);
 refer_idx = find(test_data(:, 14) >= reference_motor, 1);
 reference_time = test_data(refer_idx, 1); % test_data(1, 1)
@@ -152,7 +159,12 @@ for n=1:N-1
     end
     lin_acc = norm(log_reference(1:3));
     rot_acc = norm(log_reference(4:6));
-    is_log = islog_disturb(lin_acc, rot_acc, L_norm, adaptive_order, max_freq, last_log_time, t(n+1));
+    if thresh_based == 1
+        is_log = islog_disturb_thr(lin_acc, rot_acc, L_norm, adaptive_order, max_freq, last_log_time, t(n+1));
+    else
+        is_log = islog_disturb(lin_acc, rot_acc, L_norm, adaptive_order, max_freq, last_log_time, t(n+1));
+    end
+    
     accel_log_record(:, n+1) = is_log';
     for i = 1:2
         if is_log(i)
@@ -276,7 +288,7 @@ end
 %% write data
 
 sync_log_k = max_freq;
-sync_data = test_data(1:sync_log_k/10:end, 1:13); % NED frame
+sync_data = test_data(1:end, 1:13); % NED frame
 T_syn = array2table(sync_data);
 T_syn.Properties.VariableNames(1:13) = {'Time_us','x','y', 'z', 'roll', 'pitch', 'yaw',...
     'V_x', 'V_y', 'V_z', 'Gyro_x', 'Gyro_y', 'Gyro_z'};
@@ -312,10 +324,21 @@ kbps2gbpd = 0.0864;
 main_data_rate = 117 * 400 / 1000 %kb/s
 other_data_rate = 14.583; %kb/s
 all_data_rate = main_data_rate + other_data_rate
-logged_data_size =4*(sum(sum(accel_log_record)) * 3 + size(sync_data, 1) / 10 * (2 + 12)); %Bytes
+logged_data_size =4*(sum(sum(accel_log_record)) * 3 + size(sync_data, 1) / max_freq * (2 + 12)); %Bytes
 total_time = N / 400; %s
 processed_data_rate = logged_data_size / total_time  / 1000 %kb/s
 final_data_rate = processed_data_rate + other_data_rate
 compression_rate = final_data_rate / all_data_rate
 main_data_compression_rate = processed_data_rate / main_data_rate
 
+%%
+disp('========= v2 logging rate =============');
+new_adaptive_rate = kbps2gbpd * 4*(sum(sum(accel_log_record)) * (1+3)) / total_time / 1000; %GB/s
+regular_Hz = 4;
+previous_regular_rate = kbps2gbpd * (2+12) * 4 /1000; %GB/s
+new_regular_rate = kbps2gbpd * regular_Hz * (1 + 3 + 3 + 3) * 4 / 1000; %GB/s
+disp(['previous regular rate: ' num2str(previous_regular_rate) 'GB/s, new regular rate: ' num2str(new_regular_rate) 'GB/s']);
+new_overall_logging_rate = new_adaptive_rate + new_regular_rate;
+new_compression_ratio = new_overall_logging_rate / (main_data_rate * kbps2gbpd);
+disp(['v2 logging rate in GB/s: ' num2str(new_overall_logging_rate)]);
+disp(['v2 log compression ratio:' num2str(new_compression_ratio)]);

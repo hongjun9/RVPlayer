@@ -297,8 +297,8 @@ end
 
 %% write data
 
-sync_log_k = max_freq/10;
-sync_data = test_data(1:sync_log_k:end, [1:3, 7:9, 13]); % NED frame
+sync_log_k = max_freq;
+sync_data = test_data(1:end, [1:3, 7:9, 13]); % NED frame
 T_syn = array2table(sync_data);
 % T_syn.Properties.VariableNames(1:13) = {'Time_us','x','y', 'z', 'roll', 'pitch', 'yaw',...
 %     'V_x', 'V_y', 'V_z', 'Gyro_x', 'Gyro_y', 'Gyro_z'};
@@ -331,7 +331,7 @@ kbps2gbpd = 0.0864;
 main_data_rate = 80 * max_freq / 1000 * kbps2gbpd %gb/d
 % other_data_rate = 14.583; %kb/s
 % all_data_rate = main_data_rate + other_data_rate
-logged_data_size =4*(sum(sum(accel_log_record)) * 1 + size(sync_data, 1) / 10 * (2 + 6)); %Bytes
+logged_data_size =4*(sum(sum(accel_log_record)) * 1 + size(sync_data, 1) / max_freq * (2 + 6)); %Bytes
 total_time = N / max_freq; %s
 processed_data_rate = logged_data_size / total_time  / 1000 * kbps2gbpd %gb/d
 % final_data_rate = processed_data_rate + other_data_rate
@@ -339,3 +339,14 @@ processed_data_rate = logged_data_size / total_time  / 1000 * kbps2gbpd %gb/d
 main_data_compression_rate = processed_data_rate / main_data_rate
 
 
+%%
+disp('========= v2 logging rate =============');
+new_adaptive_rate = kbps2gbpd * 4*(sum(sum(accel_log_record)) * (1+1)) / total_time / 1000; %GB/s
+regular_Hz = 4;
+previous_regular_rate = kbps2gbpd * (2+6) * 4 /1000; %GB/s
+new_regular_rate = kbps2gbpd * regular_Hz * (1 + 2 + 2 + 1) * 4 / 1000; %GB/s
+disp(['previous regular rate: ' num2str(previous_regular_rate) 'GB/s, new regular rate: ' num2str(new_regular_rate) 'GB/s']);
+new_overall_logging_rate = new_adaptive_rate + new_regular_rate;
+new_compression_ratio = new_overall_logging_rate / (main_data_rate);
+disp(['v2 logging rate in GB/s: ' num2str(new_overall_logging_rate)]);
+disp(['v2 log compression ratio:' num2str(new_compression_ratio)]);
