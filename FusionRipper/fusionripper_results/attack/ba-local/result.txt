@@ -1,2 +1,0 @@
-accident, accident_maxdev, max_diff, attack_start_from_init, aggr_start_from_init, accident_from_init, attack_start_from_init_time, aggr_start_from_init_time, accident_time, attack_duration, success_attack_duration, crash_x, crash_y, spoofed_gps_x, spoofed_gps_y, pos_diff
-1, 0.895023, 6.425402, 40, 41, 4009, 0.3900, 0.4000, 40.0800, 39.6800, 39.6800, 
